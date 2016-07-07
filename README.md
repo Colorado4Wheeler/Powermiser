@@ -1,4 +1,4 @@
-Powermiser for Indigo 7 (Version 2.x)
+Powermiser Version 2.x (for Indigo 7)
 ==========
 
 A plugin for the Indigo home automation system (http://indigodomo.com)
