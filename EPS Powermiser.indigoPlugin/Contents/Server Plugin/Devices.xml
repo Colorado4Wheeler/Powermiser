@@ -1,0 +1,1253 @@
+<?xml version="1.0"?>
+<!-- EPS (ColoradoFourWheeler) Plugin -->
+<Devices>
+	<Device type="custom" id="AutoOff">
+		<Name>Auto Off</Name>
+		<ConfigUI>
+			<Field type="checkbox" id="allowSave" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>When we need to pop a warning of some kind</Description>
+			</Field>
+			
+			<Field type="list" id="devicelist" defaultValue="" rows="6">
+				<Label>Devices:</Label>
+				<List class="self" filter="onOffState" method="getDevicesWithStates" dynamicReload="true"/>
+			</Field>
+			
+			<Field id="timeOut" type="textfield" defaultValue="5">
+				<Label>Auto off minutes:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="physicalOnly" defaultValue="true">
+				<Label> </Label>
+				<Description>Only when physically switched on</Description>
+			</Field>
+			
+			<Field type="checkbox" id="tapDuration" defaultValue="true" >
+				<Label> </Label>
+				<Description>Extend duration when switched on repeatedly</Description>
+			</Field>
+			
+			<Field id="extendTime" type="textfield" defaultValue="5" visibleBindingId="tapDuration" visibleBindingValue="true">
+				<Label>Minutes to extend by:</Label>
+			</Field>
+			
+			<Field id="turnOn" type="textfield" defaultValue="3">
+				<Label>Repeats before staying on:</Label>
+			</Field>
+			
+			
+			<!-- ########### START CONDITION FIELDS ########### -->
+			
+			<Field id="sep_conditions" type="separator" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse"/>
+			
+			<!-- New devices don't populate, make them save it first -->
+			<Field type="checkbox" id="isNewDevice" defaultValue="true" hidden="true">
+				<Label> </Label>
+				<Description>It's a new device, they must save it first to get conditions</Description>
+			</Field>
+			
+			<Field id="sep_newDevice" type="label" visibleBindingId="isNewDevice" visibleBindingValue="true">
+				<Label>
+         SAVE THIS NEW DEVICE THEN RE-OPEN IT TO SET CONDITIONS
+    			</Label>
+			</Field>
+			
+			<Field type="menu" id="conditions" defaultValue="" visibleBindingId="isNewDevice" visibleBindingValue="false">
+				<Label>Conditions:</Label>
+				<List class="self" filter="conditionmenu" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			
+			<!-- ***********       CONDITION 1      *********** -->
+			
+			<Field id="sep_condition1" type="separator" visibleBindingId="expandConditions1" visibleBindingValue="true"/>
+			
+			<Field type="checkbox" id="expandConditions1" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
+				<Label> </Label>
+				<Description>Expand condition 1</Description>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>	
+			
+			<Field type="menu" id="condition1" defaultValue="" visibleBindingId="expandConditions1" visibleBindingValue="true">
+				<Label>Condition:</Label>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasDevice1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the device and state fields</Description>
+			</Field>
+			
+			<Field type="menu" id="device1" defaultValue="" visibleBindingId="hasDevice1" visibleBindingValue="true" >
+				<Label>Device:</Label>
+				<List class="indigo.devices"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="state1" defaultValue="" visibleBindingId="hasDevice1" visibleBindingValue="true">
+				<Label>State:</Label>
+				<List class="self" filter="device1" method="getStatesForDevice" dynamicReload="true"/>
+			</Field>
+			
+			<Field type="checkbox" id="hasVariable1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the variable field</Description>
+			</Field>
+			
+			<Field type="menu" id="variable1" defaultValue="" visibleBindingId="hasVariable1" visibleBindingValue="true" >
+				<Label>Variable:</Label>
+				<List class="indigo.variables"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasPythonFormat1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the date format</Description>
+			</Field>	
+			
+			<Field id="dtFormat1" type="textfield" defaultValue="%Y-%m-%d %H:%M:%S" visibleBindingId="hasPythonFormat1" visibleBindingValue="true">
+				<Label>Python date format:</Label>
+			</Field>
+			
+			<Field type="menu" id="evaluation1" defaultValue="equal" visibleBindingId="condition1" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
+				<Label>Is:</Label>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			
+			<Field type="checkbox" id="hasStartValue1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start value</Description>
+			</Field>			
+			
+			<Field id="value1" type="textfield" defaultValue="" visibleBindingId="hasStartValue1" visibleBindingValue="true">
+				<Label>Value:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDate1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start date (month, day, year)</Description>
+			</Field>
+			
+			<Field type="menu" id="startYear1" defaultValue="2016" visibleBindingId="hasStartDate1" visibleBindingValue="true">
+				<Label>Year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startMonth1" defaultValue="05" visibleBindingId="hasStartDate1" visibleBindingValue="true">
+				<Label>Month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startDay1" defaultValue="05" visibleBindingId="hasStartDate1" visibleBindingValue="true">
+				<Label>Day:</Label>
+				<List class="self" filter="monthdays#startMonth1#startYear1" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDow1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="startDow1" defaultValue="0" visibleBindingId="hasStartDate1" visibleBindingValue="true">
+				<Label>Day of the week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartTime1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="startTime1" defaultValue="08:00" visibleBindingId="hasStartTime1" visibleBindingValue="true">
+				<Label>Time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndValue1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end value</Description>
+			</Field>
+			
+			<Field id="endValue1" type="textfield" defaultValue="" visibleBindingId="hasEndValue1" visibleBindingValue="true">
+				<Label>And:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDate1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end date (month, day, year)</Description>
+			</Field>
+			
+			<Field id="sep_endvalues1" type="label" visibleBindingId="hasEndDate1" visibleBindingValue="true">
+				<Label>                                               ____________________________________________________</Label>
+			</Field>
+			
+			<Field type="menu" id="endYear1" defaultValue="2016" visibleBindingId="hasEndDate1" visibleBindingValue="true">
+				<Label>End year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endMonth1" defaultValue="02" visibleBindingId="hasEndDate1" visibleBindingValue="true">
+				<Label>End month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endDay1" defaultValue="15" visibleBindingId="hasEndDate1" visibleBindingValue="true">
+				<Label>End Day:</Label>
+				<List class="self" filter="monthdays#endMonth1#endYear1" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDow1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="endDow1" defaultValue="6" visibleBindingId="hasEndDate1" visibleBindingValue="true">
+				<Label>End day of week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndTime1" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="endTime1" defaultValue="10:00" visibleBindingId="hasEndTime1" visibleBindingValue="true">
+				<Label>End time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<!-- ***********       CONDITION 2      *********** -->
+			
+			<Field id="sep_condition2" type="separator" visibleBindingId="expandConditions2" visibleBindingValue="true"/>
+			
+			<Field type="checkbox" id="expandConditions2" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
+				<Label> </Label>
+				<Description>Expand condition 2</Description>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>	
+			
+			<Field type="menu" id="condition2" defaultValue="" visibleBindingId="expandConditions2" visibleBindingValue="true">
+				<Label>Condition:</Label>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasDevice2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the device and state fields</Description>
+			</Field>
+			
+			<Field type="menu" id="device2" defaultValue="" visibleBindingId="hasDevice2" visibleBindingValue="true" >
+				<Label>Device:</Label>
+				<List class="indigo.devices"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="state2" defaultValue="" visibleBindingId="hasDevice2" visibleBindingValue="true">
+				<Label>State:</Label>
+				<List class="self" filter="device2" method="getStatesForDevice" dynamicReload="true"/>
+			</Field>
+			
+			<Field type="checkbox" id="hasVariable2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the variable field</Description>
+			</Field>
+			
+			<Field type="menu" id="variable2" defaultValue="" visibleBindingId="hasVariable2" visibleBindingValue="true" >
+				<Label>Variable:</Label>
+				<List class="indigo.variables"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasPythonFormat2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the date format</Description>
+			</Field>	
+			
+			<Field id="dtFormat2" type="textfield" defaultValue="%Y-%m-%d %H:%M:%S" visibleBindingId="hasPythonFormat2" visibleBindingValue="true">
+				<Label>Python date format:</Label>
+			</Field>
+			
+			<Field type="menu" id="evaluation2" defaultValue="equal" visibleBindingId="condition2" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
+				<Label>Is:</Label>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			
+			<Field type="checkbox" id="hasStartValue2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start value</Description>
+			</Field>			
+			
+			<Field id="value2" type="textfield" defaultValue="" visibleBindingId="hasStartValue2" visibleBindingValue="true">
+				<Label>Value:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDate2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start date (month, day, year)</Description>
+			</Field>
+			
+			<Field type="menu" id="startYear2" defaultValue="2016" visibleBindingId="hasStartDate2" visibleBindingValue="true">
+				<Label>Year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startMonth2" defaultValue="05" visibleBindingId="hasStartDate2" visibleBindingValue="true">
+				<Label>Month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startDay2" defaultValue="05" visibleBindingId="hasStartDate2" visibleBindingValue="true">
+				<Label>Day:</Label>
+				<List class="self" filter="monthdays#startMonth1#startYear2" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDow2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="startDow2" defaultValue="0" visibleBindingId="hasStartDate2" visibleBindingValue="true">
+				<Label>Day of the week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartTime2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="startTime2" defaultValue="08:00" visibleBindingId="hasStartTime2" visibleBindingValue="true">
+				<Label>Time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndValue2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end value</Description>
+			</Field>
+			
+			<Field id="endValue2" type="textfield" defaultValue="" visibleBindingId="hasEndValue2" visibleBindingValue="true">
+				<Label>And:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDate2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end date (month, day, year)</Description>
+			</Field>
+			
+			<Field id="sep_endvalues2" type="label" visibleBindingId="hasEndDate2" visibleBindingValue="true">
+				<Label>                                               ____________________________________________________</Label>
+			</Field>
+			
+			<Field type="menu" id="endYear2" defaultValue="2016" visibleBindingId="hasEndDate2" visibleBindingValue="true">
+				<Label>End year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endMonth2" defaultValue="02" visibleBindingId="hasEndDate2" visibleBindingValue="true">
+				<Label>End month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endDay2" defaultValue="15" visibleBindingId="hasEndDate2" visibleBindingValue="true">
+				<Label>End Day:</Label>
+				<List class="self" filter="monthdays#endMonth1#endYear2" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDow2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="endDow2" defaultValue="6" visibleBindingId="hasEndDate2" visibleBindingValue="true">
+				<Label>End day of week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndTime2" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="endTime2" defaultValue="10:00" visibleBindingId="hasEndTime2" visibleBindingValue="true">
+				<Label>End time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<!-- ***********       CONDITION 3      *********** -->
+			
+			<Field id="sep_condition3" type="separator" visibleBindingId="expandConditions3" visibleBindingValue="true"/>
+			
+			<Field type="checkbox" id="expandConditions3" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
+				<Label> </Label>
+				<Description>Expand condition 3</Description>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>	
+			
+			<Field type="menu" id="condition3" defaultValue="" visibleBindingId="expandConditions3" visibleBindingValue="true">
+				<Label>Condition:</Label>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasDevice3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the device and state fields</Description>
+			</Field>
+			
+			<Field type="menu" id="device3" defaultValue="" visibleBindingId="hasDevice3" visibleBindingValue="true" >
+				<Label>Device:</Label>
+				<List class="indigo.devices"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="state3" defaultValue="" visibleBindingId="hasDevice3" visibleBindingValue="true">
+				<Label>State:</Label>
+				<List class="self" filter="device3" method="getStatesForDevice" dynamicReload="true"/>
+			</Field>
+			
+			<Field type="checkbox" id="hasVariable3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the variable field</Description>
+			</Field>
+			
+			<Field type="menu" id="variable3" defaultValue="" visibleBindingId="hasVariable3" visibleBindingValue="true" >
+				<Label>Variable:</Label>
+				<List class="indigo.variables"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasPythonFormat3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the date format</Description>
+			</Field>	
+			
+			<Field id="dtFormat3" type="textfield" defaultValue="%Y-%m-%d %H:%M:%S" visibleBindingId="hasPythonFormat3" visibleBindingValue="true">
+				<Label>Python date format:</Label>
+			</Field>
+			
+			<Field type="menu" id="evaluation3" defaultValue="equal" visibleBindingId="condition3" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
+				<Label>Is:</Label>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			
+			<Field type="checkbox" id="hasStartValue3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start value</Description>
+			</Field>			
+			
+			<Field id="value3" type="textfield" defaultValue="" visibleBindingId="hasStartValue3" visibleBindingValue="true">
+				<Label>Value:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDate3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start date (month, day, year)</Description>
+			</Field>
+			
+			<Field type="menu" id="startYear3" defaultValue="2016" visibleBindingId="hasStartDate3" visibleBindingValue="true">
+				<Label>Year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startMonth3" defaultValue="05" visibleBindingId="hasStartDate3" visibleBindingValue="true">
+				<Label>Month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startDay3" defaultValue="05" visibleBindingId="hasStartDate3" visibleBindingValue="true">
+				<Label>Day:</Label>
+				<List class="self" filter="monthdays#startMonth1#startYear3" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDow3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="startDow3" defaultValue="0" visibleBindingId="hasStartDate3" visibleBindingValue="true">
+				<Label>Day of the week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartTime3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="startTime3" defaultValue="08:00" visibleBindingId="hasStartTime3" visibleBindingValue="true">
+				<Label>Time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndValue3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end value</Description>
+			</Field>
+			
+			<Field id="endValue3" type="textfield" defaultValue="" visibleBindingId="hasEndValue3" visibleBindingValue="true">
+				<Label>And:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDate3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end date (month, day, year)</Description>
+			</Field>
+			
+			<Field id="sep_endvalues3" type="label" visibleBindingId="hasEndDate3" visibleBindingValue="true">
+				<Label>                                               ____________________________________________________</Label>
+			</Field>
+			
+			<Field type="menu" id="endYear3" defaultValue="2016" visibleBindingId="hasEndDate3" visibleBindingValue="true">
+				<Label>End year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endMonth3" defaultValue="03" visibleBindingId="hasEndDate3" visibleBindingValue="true">
+				<Label>End month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endDay3" defaultValue="15" visibleBindingId="hasEndDate3" visibleBindingValue="true">
+				<Label>End Day:</Label>
+				<List class="self" filter="monthdays#endMonth1#endYear3" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDow3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="endDow3" defaultValue="6" visibleBindingId="hasEndDate3" visibleBindingValue="true">
+				<Label>End day of week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndTime3" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="endTime3" defaultValue="10:00" visibleBindingId="hasEndTime3" visibleBindingValue="true">
+				<Label>End time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<!-- ***********       CONDITION 4      *********** -->
+			
+			<Field id="sep_condition4" type="separator" visibleBindingId="expandConditions4" visibleBindingValue="true"/>
+			
+			<Field type="checkbox" id="expandConditions4" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
+				<Label> </Label>
+				<Description>Expand condition 4</Description>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>	
+			
+			<Field type="menu" id="condition4" defaultValue="" visibleBindingId="expandConditions4" visibleBindingValue="true">
+				<Label>Condition:</Label>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasDevice4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the device and state fields</Description>
+			</Field>
+			
+			<Field type="menu" id="device4" defaultValue="" visibleBindingId="hasDevice4" visibleBindingValue="true" >
+				<Label>Device:</Label>
+				<List class="indigo.devices"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="state4" defaultValue="" visibleBindingId="hasDevice4" visibleBindingValue="true">
+				<Label>State:</Label>
+				<List class="self" filter="device4" method="getStatesForDevice" dynamicReload="true"/>
+			</Field>
+			
+			<Field type="checkbox" id="hasVariable4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the variable field</Description>
+			</Field>
+			
+			<Field type="menu" id="variable4" defaultValue="" visibleBindingId="hasVariable4" visibleBindingValue="true" >
+				<Label>Variable:</Label>
+				<List class="indigo.variables"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasPythonFormat4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the date format</Description>
+			</Field>	
+			
+			<Field id="dtFormat4" type="textfield" defaultValue="%Y-%m-%d %H:%M:%S" visibleBindingId="hasPythonFormat4" visibleBindingValue="true">
+				<Label>Python date format:</Label>
+			</Field>
+			
+			<Field type="menu" id="evaluation4" defaultValue="equal" visibleBindingId="condition4" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
+				<Label>Is:</Label>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			
+			<Field type="checkbox" id="hasStartValue4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start value</Description>
+			</Field>			
+			
+			<Field id="value4" type="textfield" defaultValue="" visibleBindingId="hasStartValue4" visibleBindingValue="true">
+				<Label>Value:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDate4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start date (month, day, year)</Description>
+			</Field>
+			
+			<Field type="menu" id="startYear4" defaultValue="2016" visibleBindingId="hasStartDate4" visibleBindingValue="true">
+				<Label>Year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startMonth4" defaultValue="05" visibleBindingId="hasStartDate4" visibleBindingValue="true">
+				<Label>Month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startDay4" defaultValue="05" visibleBindingId="hasStartDate4" visibleBindingValue="true">
+				<Label>Day:</Label>
+				<List class="self" filter="monthdays#startMonth1#startYear4" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDow4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="startDow4" defaultValue="0" visibleBindingId="hasStartDate4" visibleBindingValue="true">
+				<Label>Day of the week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartTime4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="startTime4" defaultValue="08:00" visibleBindingId="hasStartTime4" visibleBindingValue="true">
+				<Label>Time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndValue4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end value</Description>
+			</Field>
+			
+			<Field id="endValue4" type="textfield" defaultValue="" visibleBindingId="hasEndValue4" visibleBindingValue="true">
+				<Label>And:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDate4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end date (month, day, year)</Description>
+			</Field>
+			
+			<Field id="sep_endvalues4" type="label" visibleBindingId="hasEndDate4" visibleBindingValue="true">
+				<Label>                                               ____________________________________________________</Label>
+			</Field>
+			
+			<Field type="menu" id="endYear4" defaultValue="2016" visibleBindingId="hasEndDate4" visibleBindingValue="true">
+				<Label>End year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endMonth4" defaultValue="04" visibleBindingId="hasEndDate4" visibleBindingValue="true">
+				<Label>End month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endDay4" defaultValue="15" visibleBindingId="hasEndDate4" visibleBindingValue="true">
+				<Label>End Day:</Label>
+				<List class="self" filter="monthdays#endMonth1#endYear4" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDow4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="endDow4" defaultValue="6" visibleBindingId="hasEndDate4" visibleBindingValue="true">
+				<Label>End day of week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndTime4" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="endTime4" defaultValue="10:00" visibleBindingId="hasEndTime4" visibleBindingValue="true">
+				<Label>End time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<!-- ***********       CONDITION 5      *********** -->
+			
+			<Field id="sep_condition5" type="separator" visibleBindingId="expandConditions5" visibleBindingValue="true"/>
+			
+			<Field type="checkbox" id="expandConditions5" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
+				<Label> </Label>
+				<Description>Expand condition 5</Description>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>	
+			
+			<Field type="menu" id="condition5" defaultValue="" visibleBindingId="expandConditions5" visibleBindingValue="true">
+				<Label>Condition:</Label>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasDevice5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the device and state fields</Description>
+			</Field>
+			
+			<Field type="menu" id="device5" defaultValue="" visibleBindingId="hasDevice5" visibleBindingValue="true" >
+				<Label>Device:</Label>
+				<List class="indigo.devices"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="state5" defaultValue="" visibleBindingId="hasDevice5" visibleBindingValue="true">
+				<Label>State:</Label>
+				<List class="self" filter="device5" method="getStatesForDevice" dynamicReload="true"/>
+			</Field>
+			
+			<Field type="checkbox" id="hasVariable5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the variable field</Description>
+			</Field>
+			
+			<Field type="menu" id="variable5" defaultValue="" visibleBindingId="hasVariable5" visibleBindingValue="true" >
+				<Label>Variable:</Label>
+				<List class="indigo.variables"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasPythonFormat5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the date format</Description>
+			</Field>	
+			
+			<Field id="dtFormat5" type="textfield" defaultValue="%Y-%m-%d %H:%M:%S" visibleBindingId="hasPythonFormat5" visibleBindingValue="true">
+				<Label>Python date format:</Label>
+			</Field>
+			
+			<Field type="menu" id="evaluation5" defaultValue="equal" visibleBindingId="condition5" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
+				<Label>Is:</Label>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			
+			<Field type="checkbox" id="hasStartValue5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start value</Description>
+			</Field>			
+			
+			<Field id="value5" type="textfield" defaultValue="" visibleBindingId="hasStartValue5" visibleBindingValue="true">
+				<Label>Value:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDate5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start date (month, day, year)</Description>
+			</Field>
+			
+			<Field type="menu" id="startYear5" defaultValue="2016" visibleBindingId="hasStartDate5" visibleBindingValue="true">
+				<Label>Year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startMonth5" defaultValue="05" visibleBindingId="hasStartDate5" visibleBindingValue="true">
+				<Label>Month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="startDay5" defaultValue="05" visibleBindingId="hasStartDate5" visibleBindingValue="true">
+				<Label>Day:</Label>
+				<List class="self" filter="monthdays#startMonth1#startYear5" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartDow5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the start day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="startDow5" defaultValue="0" visibleBindingId="hasStartDate5" visibleBindingValue="true">
+				<Label>Day of the week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasStartTime5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="startTime5" defaultValue="08:00" visibleBindingId="hasStartTime5" visibleBindingValue="true">
+				<Label>Time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndValue5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end value</Description>
+			</Field>
+			
+			<Field id="endValue5" type="textfield" defaultValue="" visibleBindingId="hasEndValue5" visibleBindingValue="true">
+				<Label>And:</Label>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDate5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end date (month, day, year)</Description>
+			</Field>
+			
+			<Field id="sep_endvalues5" type="label" visibleBindingId="hasEndDate5" visibleBindingValue="true">
+				<Label>                                               ____________________________________________________</Label>
+			</Field>
+			
+			<Field type="menu" id="endYear5" defaultValue="2016" visibleBindingId="hasEndDate5" visibleBindingValue="true">
+				<Label>End year:</Label>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endMonth5" defaultValue="05" visibleBindingId="hasEndDate5" visibleBindingValue="true">
+				<Label>End month:</Label>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="endDay5" defaultValue="15" visibleBindingId="hasEndDate5" visibleBindingValue="true">
+				<Label>End Day:</Label>
+				<List class="self" filter="monthdays#endMonth1#endYear5" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndDow5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end day of the week</Description>
+			</Field>
+			
+			<Field type="menu" id="endDow5" defaultValue="6" visibleBindingId="hasEndDate5" visibleBindingValue="true">
+				<Label>End day of week:</Label>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+			
+			<Field type="checkbox" id="hasEndTime5" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Show the end time</Description>
+			</Field>
+			
+			<Field type="menu" id="endTime5" defaultValue="10:00" visibleBindingId="hasEndTime5" visibleBindingValue="true">
+				<Label>End time:</Label>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
+															
+						
+			
+			
+			<!-- ***********      COMMON FIELDS     *********** -->
+			
+			<!-- If conditions are disabled then add this label as a screen-size placeholder (14 lines for 1 condition) -->
+			<Field id="sep_noconditions" type="label" visibleBindingId="conditions" visibleBindingValue="none">
+				<Label>
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+
+
+				
+				
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.				</Label>
+			</Field>
+			
+			<!-- When we have multiple conditions show extra padding when first opened -->
+			<Field type="checkbox" id="multiConditions" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Extra padding when first opened to allow device expansions</Description>
+			</Field>
+			
+			<Field id="sep_multiConditions" type="label" visibleBindingId="multiConditions" visibleBindingValue="true">
+				<Label>
+				
+.				</Label>
+			</Field>
+			
+			<!-- The current focused condition -->
+			<Field id="currentCondition" type="textfield" defaultValue="1" hidden="true">
+				<Label>So we know what other condition blocks to toggle</Label>
+			</Field>
+			
+			<!-- If all conditions collapsed show this screen size placeholder (12 lines for 1 condition) -->
+			<Field type="checkbox" id="noneExpanded" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>No conditions are expanded, show placeholder</Description>
+			</Field>
+			
+			<Field id="sep_allcollapsed" type="label" visibleBindingId="noneExpanded" visibleBindingValue="true">
+				<Label>
+				
+				
+				
+				
+				
+				
+				
+				
+							
+				
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+.				</Label>
+			</Field>
+			
+			<!-- Current condition is disabled, only 1 field showing  (10 lines for 1 condition) -->
+			<Field type="checkbox" id="isDisabled" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Current condition disabled, show placeholder</Description>
+			</Field>
+			
+			<Field id="sep_disabled" type="label" visibleBindingId="isDisabled" visibleBindingValue="true">
+				<Label>
+				
+				
+				
+				
+				
+				
+				
+				
+							
+
+
+
+
+
+
+
+
+
+
+
+
+
+.				</Label>
+			</Field>
+			
+			<!-- Only 3 fields showing, like when time is selected as condition  (7 lines for 1 condition) -->
+			<Field type="checkbox" id="placeThree" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 3 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeThree" type="label" visibleBindingId="placeThree" visibleBindingValue="true">
+				<Label>
+				
+				
+
+
+
+
+.				</Label>
+			</Field>
+			
+			<!-- Only 4 fields showing, like when variable is selected as condition  (5 lines for 1 condition) -->
+			<Field type="checkbox" id="placeFour" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 4 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeFour" type="label" visibleBindingId="placeFour" visibleBindingValue="true">
+				<Label>
+				
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.				</Label>
+			</Field>
+			
+			<!-- Only 5 fields showing, like when device is selected as condition (3 lines for 1 condition) -->
+			<Field type="checkbox" id="placeFive" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 5 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeFive" type="label" visibleBindingId="placeFive" visibleBindingValue="true">
+				<Label>
+				
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.				</Label>
+			</Field>
+			
+			<!-- Only 6 fields showing, like when device state time is selected as condition (2 lines for 1 condition) -->
+			<Field type="checkbox" id="placeSix" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 6 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeSix" type="label" visibleBindingId="placeSix" visibleBindingValue="true">
+				<Label>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.</Label>
+			</Field>
+			
+			<!-- Only 7 of 8 fields showing, like when device state date is selected as condition (1 lines for 1 condition) -->
+			<Field type="checkbox" id="placeSeven" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 7 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeSeven" type="label" visibleBindingId="placeSeven" visibleBindingValue="true">
+				<Label>
+
+
+
+
+
+
+
+
+
+
+
+
+.</Label>
+			</Field>
+			
+			<!-- Only 9 fields showing, like when device state date is selected as condition (1 lines for 1 condition) -->
+			<Field type="checkbox" id="placeNine" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 9 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeNine" type="label" visibleBindingId="placeNine" visibleBindingValue="true">
+				<Label>
+
+
+
+
+
+
+
+
+
+.</Label>
+			</Field>			
+			
+			<!-- Only 10 fields showing, like when device state date is selected as condition (1 lines for 1 condition) -->
+			<Field type="checkbox" id="placeTen" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 10 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeTen" type="label" visibleBindingId="placeTen" visibleBindingValue="true">
+				<Label>
+
+
+
+
+
+
+
+.</Label>
+			</Field>
+			
+			<!-- Only 13 fields showing, like when device state date is selected as condition (1 lines for 1 condition) -->
+			<Field type="checkbox" id="placeThirteen" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 13 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeThirteen" type="label" visibleBindingId="placeThirteen" visibleBindingValue="true">
+				<Label>
+
+
+
+.</Label>
+			</Field>
+			
+			<!-- Only 15 fields showing, like when device state date is selected as condition (1 lines for 1 condition) -->
+			<Field type="checkbox" id="placeFifteen" defaultValue="false" hidden="true">
+				<Label> </Label>
+				<Description>Only 15 fields showing</Description>
+			</Field>
+			
+			<Field id="sep_placeFifteen" type="label" visibleBindingId="placeFifteen" visibleBindingValue="true">
+				<Label>13.</Label>
+			</Field>
+			
+			<!-- ########### END CONDITION FIELDS ########### -->
+			
+		</ConfigUI>
+		<States>
+			<!-- All EPS plugins have this state and use it for the Indigo lists -->
+			<State id="statedisplay">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Current device state</TriggerLabel>
+				<ControlPageLabel>Current device state</ControlPageLabel>
+			</State>
+			
+			<State id="sep_statedisplay">
+				<ValueType>Separator</ValueType>
+			</State>
+			
+			<State id="autoOffTimes">
+				<ValueType>String</ValueType>
+				<TriggerLabel>Plugin specific state unsuitable for triggers</TriggerLabel>
+				<ControlPageLabel>Plugin specific state unsuitable for control pages</ControlPageLabel>
+			</State>
+			
+		</States>
+		<UiDisplayStateId>statedisplay</UiDisplayStateId>
+	</Device>
+
+</Devices>

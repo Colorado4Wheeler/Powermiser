@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- EPS (ColoradoFourWheeler) Plugin -->
+<Actions>
+	<!-- Defaults to the main ColoradoFourWheeler forum on Indigo -->
+	<SupportURL>http://forums.indigodomo.com/viewtopic.php?f=196&amp;t=16343</SupportURL>
+	
+	<!-- All plugins that monitor other devices will have an update action -->
+	
+</Actions>
