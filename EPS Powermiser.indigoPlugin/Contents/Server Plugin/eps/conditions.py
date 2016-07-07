@@ -911,7 +911,7 @@ class conditions:
 	#
 	def showPlaceholders (self, valuesDict):
 		try:
-			if self.enablePlaceholders == False: return
+			if self.enablePlaceholders == False: return valuesDict
 			
 			cb = valuesDict["currentCondition"]
 			currentBlock = int(cb)
@@ -1035,15 +1035,15 @@ class conditions:
 			valuesDict["hasVariable" + str(index)] = False
 			
 			if valuesDict["conditions"] == "none": 
-				self.debugLog ("Condition checking has been turned off, disabling all condition fields")
+				#self.debugLog ("Condition checking has been turned off, disabling all condition fields")
 				return valuesDict # nothing more to do, they turned off condition checking
 				
 			if valuesDict["expandConditions" + str(index)] == False:
-				self.debugLog ("Condition %i is collapsed" % index)
+				#self.debugLog ("Condition %i is collapsed" % index)
 				return valuesDict # nothing more to do, they turned off condition checking
 				
 			if valuesDict["condition" + str(index)] == "disabled":
-				self.debugLog ("Condition %i is disabled" % index)
+				#self.debugLog ("Condition %i is disabled" % index)
 				return valuesDict # nothing more to do, they turned off condition checking
 			
 			# Turn on start values

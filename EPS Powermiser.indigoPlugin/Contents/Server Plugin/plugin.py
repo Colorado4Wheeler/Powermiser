@@ -275,7 +275,7 @@ class Plugin(indigo.PluginBase):
 	def onConditionsChange (self, valuesDict, typeId, devId):
 		# Just here so we can refresh the states for dynamic UI
 		if typeId == "AutoOff":
-			valuesDict = self.cond.setUIDefaults (valuesDict, "timebetween")
+			valuesDict = self.cond.setUIDefaults (valuesDict)
 					
 		return valuesDict
 		
