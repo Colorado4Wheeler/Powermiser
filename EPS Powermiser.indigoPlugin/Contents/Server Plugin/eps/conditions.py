@@ -729,7 +729,7 @@ class conditions:
 			# See if this is a brand new device and if it is then set defaults
 			if eps.valueValid (dev.pluginProps, "isNewDevice"):
 				if dev.pluginProps["isNewDevice"]:
-					indigo.server.log("%s added, enabling conditions.  You can now re-open the device to use conditions" % dev.name)
+					#indigo.server.log("%s added, enabling conditions.  You can now re-open the device to use conditions" % dev.name)
 					props["conditions"] = "none"
 					props["isNewDevice"] = False
 					

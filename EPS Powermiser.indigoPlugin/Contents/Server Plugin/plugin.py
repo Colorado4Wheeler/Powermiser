@@ -344,6 +344,36 @@ class Plugin(indigo.PluginBase):
 		return True	
 	
 	#
+	# Z-Wave command received - 2.0
+	#
+	def zwaveCommandReceived(self, cmd):
+		return
+		
+		indigo.server.log (unicode(cmd))
+		
+	#
+	# Z-Wave command sent - 2.0
+	#
+	def zwaveCommandSent(self, cmd):
+		if eps.valueValid (cmd, "nodeId", True):
+			nodeId = cmd['nodeId']
+			dev = self.cache.deviceForAddress (nodeId)
+			if dev:
+				indigo.server.log ("Found monitored Z-Wave from command: %s" % unicode(dev))
+			
+			else:
+				indigo.server.log ("Couldn't find node ID %s in devices" % unicode(nodeId))
+			
+		return	
+		
+		indigo.server.log (unicode(cmd))
+		
+		byteList = cmd['bytes']
+		byteListStr = ' '.join(["%02X" % byte for byte in byteList])
+		
+		indigo.server.log(u"received: %s" % (byteListStr))
+		
+	#
 	# Insteon command received
 	#
 	def insteonCommandReceived (self, cmd):
@@ -506,9 +536,10 @@ class Plugin(indigo.PluginBase):
 			if self.cache.pollingMode == "realTime": 
 				#indigo.variables.subscribeToChanges()
 				indigo.devices.subscribeToChanges()
-				#indigo.zwave.subscribeToIncoming()
 				indigo.insteon.subscribeToIncoming()
 				indigo.insteon.subscribeToOutgoing()
+				indigo.zwave.subscribeToIncoming() # 2.0
+				indigo.zwave.subscribeToOutgoing() # 2.0
 				
 		
 		# Add all sub device variables that our plugin links to, reloading only on the last one
