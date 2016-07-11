@@ -3,6 +3,7 @@ import string
 import linecache # exception reporting
 import sys # exception reporting
 
+libversion = "2.0.7"
 parent = None # for debug logging
 
 #
@@ -16,10 +17,9 @@ def debugLog (value):
 # Print library version - added optional return in 2.0.1
 #
 def libVersion (returnval = False):
-	ver = "2.0.5"
-	if returnval: return ver
+	if returnval: return libversion
 	
-	indigo.server.log ("##### EPS LIB %s #####" % ver)
+	indigo.server.log ("##### EPS LIB %s #####" % libversion)
 		
 	
 # Check validity of a value in a dictionary 2.0.1
@@ -33,6 +33,20 @@ def valueValid (dict, value, ifBlank=False):
 					return True
 					
 	return False
+
+#
+# Check validity of a value in a dictionary, setting to the default value if invalid and returning dict - 2.06
+#
+def validateDictValue (dict, value, default, ifBlank=False):
+	try:
+		if valueValid (dict, value, ifBlank) == False:
+			dict[value] = default
+			return dict
+				
+	except Exception as e:
+		printException(e)
+		
+	return dict
 
 #	
 # Check validity of a value in dictionary and return that value if valid or default value if not - 2.05

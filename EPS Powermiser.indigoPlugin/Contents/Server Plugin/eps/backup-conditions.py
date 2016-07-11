@@ -16,9 +16,14 @@ class conditions:
 	def __init__ (self, parent):
 		self.parent = parent
 		self.maxConditions = 10
-		self.enablePlaceholders = True 
+		self.enablePlaceholders = True # Indigo 6
 		
-		self.version = "2.1"
+		iVer = str(indigo.server.version).split(".")
+		if int(iVer[0]) > 6: 
+			self.debugLog ("Disabling placeholders for Indigo 7 or greater")
+			self.enablePlaceholders = False # Indigo 7
+		
+		self.version = "1.0"
 		
 	#
 	# Debug log
@@ -34,34 +39,32 @@ class conditions:
 	#
 	# Check if conditions pass, return false on any condition failure
 	#
-	def conditionsPass (self, propsDict):
+	def conditionsPass (self, dev):
 		try:
 			isTrue = 0
 			isFalse = 0
 			
-			if eps.valueValid (propsDict, "conditions", True) == False: return False
-			condition = propsDict["conditions"]
+			if eps.valueValid (dev.pluginProps, "conditions", True) == False: return False
+			condition = dev.pluginProps["conditions"]
 			
-			self.parent.logger.debug ("\tCondition is set to %s, testing condition(s)" % condition)
+			self.debugLog ("\tCondition is set to %s, testing condition(s)" % condition)
 			
 			if condition == "none": return True
 			
 			for i in range (0, self.maxConditions + 1):
-				if eps.valueValid (propsDict, "condition" + str(i), True) == False: continue # no condition for this index
-				if propsDict["condition" + str(i)] == "disabled": continue # this condition is disabled
+				if eps.valueValid (dev.pluginProps, "condition" + str(i), True) == False: continue # no condition for this index
+				if dev.pluginProps["condition" + str(i)] == "disabled": continue # this condition is disabled
 				
 				val = [0,0] # Failsafe
 				
-				if propsDict["evaluation" + str(i)] == "between" or propsDict["evaluation" + str(i)] == "notbetween": val = self.conditionBetween (propsDict, i)
-				if propsDict["evaluation" + str(i)] == "equal" or propsDict["evaluation" + str(i)] == "notequal": val = self.conditionEquals (propsDict, i)
-				if propsDict["evaluation" + str(i)] == "greater": val = self.conditionGreater (propsDict, i)
-				if propsDict["evaluation" + str(i)] == "less": val = self.conditionLess (propsDict, i)
-				if propsDict["evaluation" + str(i)] == "contains" or propsDict["evaluation" + str(i)] == "notcontains": val = self.conditionContain (propsDict, i)
+				if dev.pluginProps["evaluation" + str(i)] == "between" or dev.pluginProps["evaluation" + str(i)] == "notbetween": val = self.conditionBetween (dev, i)
+				if dev.pluginProps["evaluation" + str(i)] == "equal" or dev.pluginProps["evaluation" + str(i)] == "notequal": val = self.conditionEquals (dev, i)
+				if dev.pluginProps["evaluation" + str(i)] == "greater": val = self.conditionGreater (dev, i)
+				if dev.pluginProps["evaluation" + str(i)] == "less": val = self.conditionLess (dev, i)
+				if dev.pluginProps["evaluation" + str(i)] == "contains" or dev.pluginProps["evaluation" + str(i)] == "notcontains": val = self.conditionContain (dev, i)
 					
 				isTrue = isTrue + val[0]
 				isFalse = isFalse + val[1]			
-		
-			self.parent.logger.debug("\tConditions returning true: %i, returning false: %i" % (isTrue, isFalse))
 		
 			if condition == "alltrue" and isFalse <> 0: return False
 			if condition == "anytrue" and isTrue == 0: return False
@@ -76,7 +79,7 @@ class conditions:
 	#
 	# Check condition evaluation CONTAINS
 	#
-	def conditionContain (self, propsDict, index):
+	def conditionContain (self, dev, index):
 		ret = []
 		isTrue = 0
 		isFalse = 0
@@ -85,34 +88,34 @@ class conditions:
 			compareString = ""
 			devEx = None
 			
-			if propsDict["condition" + str(index)] == "device" or propsDict["condition" + str(index)] == "devstatedateonly" or propsDict["condition" + str(index)] == "devstatetimeonly" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "devstatedow":
-				devEx = indigo.devices[int(propsDict["device" + str(index)])]
+			if dev.pluginProps["condition" + str(index)] == "device" or dev.pluginProps["condition" + str(index)] == "devstatedateonly" or dev.pluginProps["condition" + str(index)] == "devstatetimeonly" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "devstatedow":
+				devEx = indigo.devices[int(dev.pluginProps["device" + str(index)])]
 			
-			if propsDict["condition" + str(index)] == "device":
-				if eps.valueValid (devEx.states, propsDict["state" + str(index)]):
-					compareString = unicode(devEx.states[propsDict["state" + str(index)]])
+			if dev.pluginProps["condition" + str(index)] == "device":
+				if eps.valueValid (devEx.states, dev.pluginProps["state" + str(index)]):
+					compareString = unicode(devEx.states[dev.pluginProps["state" + str(index)]])
 			
-			elif propsDict["condition" + str(index)] == "variable":
-				var = indigo.variables[int(propsDict["variable" + str(index)])]
+			elif dev.pluginProps["condition" + str(index)] == "variable":
+				var = indigo.variables[int(dev.pluginProps["variable" + str(index)])]
 				compareString = unicode(var.value)
 				
-			elif propsDict["condition" + str(index)] == "datetime" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "vardatetime":
+			elif dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime":
 				d = indigo.server.getTime()
-				if propsDict["condition" + str(index)] == "devstatedatetime": d = self.getDevStateDateTime (propsDict, devEx, index)
-				if propsDict["condition" + str(index)] == "vardatetime": d = self.getVarDateTime (propsDict, index)
+				if dev.pluginProps["condition" + str(index)] == "devstatedatetime": d = self.getDevStateDateTime (dev, devEx, index)
+				if dev.pluginProps["condition" + str(index)] == "vardatetime": d = self.getVarDateTime (dev, index)
 				
 				compareString = d.strftime ("%Y-%m-%d %H:%M:%S | %m %b %B | %A %w | %I | %p")
 				
 			else:
-				self.parent.logger.error("Unknown condition %s in contains" % propsDict["condition" + str(index)])
+				indigo.server.log("Unknown condition %s in contains" % dev.pluginProps["condition" + str(index)], isError=True)
 				
-			self.parent.logger.debug ("\tChecking if %s is in %s" % (propsDict["value" + str(index)], compareString))
+			self.debugLog ("\tChecking if %s is in %s" % (dev.pluginProps["value" + str(index)], compareString))
 			
 			compareValue = ""
 			if compareString != "": compareValue = compareString.lower()
 			
 			findValue = ""
-			if propsDict["value" + str(index)] != "": findValue = str(propsDict["value" + str(index)]).lower()
+			if dev.pluginProps["value" + str(index)] != "": findValue = str(dev.pluginProps["value" + str(index)]).lower()
 			
 			if findValue != "":
 				foundAt = string.find (compareString, findValue)
@@ -143,35 +146,40 @@ class conditions:
 	#
 	# Check condition evaluation LESS THAN
 	#
-	def conditionLess (self, propsDict, index):
+	def conditionLess (self, dev, index):
 		ret = []
 		isTrue = 0
 		isFalse = 0
 		
 		try:
-			if propsDict["condition" + str(index)] == "datetime" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "vardatetime": val = self.conditionsDate (propsDict, index)
+			#if dev.pluginProps["condition" + str(index)] == "timeonly" or dev.pluginProps["condition" + str(index)] == "devstatetimeonly" or dev.pluginProps["condition" + str(index)] == "vartimeonly": val = self.conditionsDateLess (dev, index, True, False)
+			#if dev.pluginProps["condition" + str(index)] == "dateonly" or dev.pluginProps["condition" + str(index)] == "devstatedateonly" or dev.pluginProps["condition" + str(index)] == "vardateonly": val = self.conditionsDateLess (dev, index, False, True)
+			#if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDateLess (dev, index, True, True)
+			#if dev.pluginProps["condition" + str(index)] == "dow" or dev.pluginProps["condition" + str(index)] == "devstatedow": val = self.conditionsDow (dev, index)
 			
-			if propsDict["condition" + str(index)] == "device":
+			if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDate (dev, index)
+			
+			if dev.pluginProps["condition" + str(index)] == "device":
 				val = [0, 0] # Failsafe
-				devEx = indigo.devices[int(propsDict["device" + str(index)])]
-				if eps.valueValid (devEx.states, propsDict["state" + str(index)]):
-					compareString = unicode(devEx.states[propsDict["state" + str(index)]])
-					self.parent.logger.debug ("\tChecking if device state '%s' value of '%s' is less than '%s'" % (propsDict["state" + str(index)], compareString, propsDict["value" + str(index)]))
+				devEx = indigo.devices[int(dev.pluginProps["device" + str(index)])]
+				if eps.valueValid (devEx.states, dev.pluginProps["state" + str(index)]):
+					compareString = unicode(devEx.states[dev.pluginProps["state" + str(index)]])
+					self.debugLog ("\tChecking if device state '%s' value of '%s' is less than '%s'" % (dev.pluginProps["state" + str(index)], compareString, dev.pluginProps["value" + str(index)]))
 					
-					if compareString.lower() < propsDict["value" + str(index)].lower():
+					if compareString.lower() < dev.pluginProps["value" + str(index)].lower():
 						val[0] = 1
 						val[1] = 0
 					else:
 						val[0] = 0
 						val[1] = 1
 						
-			if propsDict["condition" + str(index)] == "variable":
+			if dev.pluginProps["condition" + str(index)] == "variable":
 				val = [0, 0] # Failsafe
-				var = indigo.variables[int(propsDict["variable" + str(index)])]
+				var = indigo.variables[int(dev.pluginProps["variable" + str(index)])]
 				compareString = unicode(var.value)
-				self.parent.logger.debug ("\tChecking if variable '%s' value of '%s' is less than '%s'" % (var.name, compareString, propsDict["value" + str(index)]))
+				self.debugLog ("\tChecking if variable '%s' value of '%s' is less than '%s'" % (var.name, compareString, dev.pluginProps["value" + str(index)]))
 									
-				if compareString.lower() < propsDict["value" + str(index)].lower():
+				if compareString.lower() < dev.pluginProps["value" + str(index)].lower():
 					val[0] = 1
 					val[1] = 0
 				else:
@@ -194,35 +202,40 @@ class conditions:
 	#
 	# Check condition evaluation GREATER THAN
 	#
-	def conditionGreater (self, propsDict, index):
+	def conditionGreater (self, dev, index):
 		ret = []
 		isTrue = 0
 		isFalse = 0
 		
 		try:
-			if propsDict["condition" + str(index)] == "datetime" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "vardatetime": val = self.conditionsDate (propsDict, index)
+			#if dev.pluginProps["condition" + str(index)] == "timeonly" or dev.pluginProps["condition" + str(index)] == "devstatetimeonly" or dev.pluginProps["condition" + str(index)] == "vartimeonly": val = self.conditionsDateGreater (dev, index, True, False)
+			#if dev.pluginProps["condition" + str(index)] == "dateonly" or dev.pluginProps["condition" + str(index)] == "devstatedateonly" or dev.pluginProps["condition" + str(index)] == "vardateonly": val = self.conditionsDateGreater (dev, index, False, True)
+			#if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDateGreater (dev, index, True, True)
+			#if dev.pluginProps["condition" + str(index)] == "dow" or dev.pluginProps["condition" + str(index)] == "devstatedow": val = self.conditionsDow (dev, index)
 			
-			if propsDict["condition" + str(index)] == "device":
+			if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDate (dev, index)
+			
+			if dev.pluginProps["condition" + str(index)] == "device":
 				val = [0, 0] # Failsafe
-				devEx = indigo.devices[int(propsDict["device" + str(index)])]
-				if eps.valueValid (devEx.states, propsDict["state" + str(index)]):
-					compareString = unicode(devEx.states[propsDict["state" + str(index)]])
-					self.parent.logger.debug ("\tChecking if device state '%s' value of '%s' is greater than '%s'" % (propsDict["state" + str(index)], compareString, propsDict["value" + str(index)]))
+				devEx = indigo.devices[int(dev.pluginProps["device" + str(index)])]
+				if eps.valueValid (devEx.states, dev.pluginProps["state" + str(index)]):
+					compareString = unicode(devEx.states[dev.pluginProps["state" + str(index)]])
+					self.debugLog ("\tChecking if device state '%s' value of '%s' is greater than '%s'" % (dev.pluginProps["state" + str(index)], compareString, dev.pluginProps["value" + str(index)]))
 					
-					if compareString.lower() > propsDict["value" + str(index)].lower():
+					if compareString.lower() > dev.pluginProps["value" + str(index)].lower():
 						val[0] = 1
 						val[1] = 0
 					else:
 						val[0] = 0
 						val[1] = 1
 						
-			if propsDict["condition" + str(index)] == "variable":
+			if dev.pluginProps["condition" + str(index)] == "variable":
 				val = [0, 0] # Failsafe
-				var = indigo.variables[int(propsDict["variable" + str(index)])]
+				var = indigo.variables[int(dev.pluginProps["variable" + str(index)])]
 				compareString = unicode(var.value)
-				self.parent.logger.debug ("\tChecking if variable '%s' value of '%s' is greater than '%s'" % (var.name, compareString, propsDict["value" + str(index)]))
+				self.debugLog ("\tChecking if variable '%s' value of '%s' is greater than '%s'" % (var.name, compareString, dev.pluginProps["value" + str(index)]))
 									
-				if compareString.lower() > propsDict["value" + str(index)].lower():
+				if compareString.lower() > dev.pluginProps["value" + str(index)].lower():
 					val[0] = 1
 					val[1] = 0
 				else:
@@ -245,47 +258,51 @@ class conditions:
 	#
 	# Check condition evaluation EQUAL
 	#
-	def conditionEquals (self, propsDict, index):
+	def conditionEquals (self, dev, index):
 		ret = []
 		isTrue = 0
 		isFalse = 0
 		
 		try:
-			if propsDict["condition" + str(index)] == "datetime" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "vardatetime": val = self.conditionsDate (propsDict, index)
+			#if dev.pluginProps["condition" + str(index)] == "timeonly" or dev.pluginProps["condition" + str(index)] == "devstatetimeonly" or dev.pluginProps["condition" + str(index)] == "vartimeonly": val = self.conditionsDateEquals (dev, index, True, False)
+			#if dev.pluginProps["condition" + str(index)] == "dateonly" or dev.pluginProps["condition" + str(index)] == "devstatedateonly" or dev.pluginProps["condition" + str(index)] == "vardateonly": val = self.conditionsDateEquals (dev, index, False, True)
+			#if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDateEquals (dev, index, True, True)
+			#if dev.pluginProps["condition" + str(index)] == "dow" or dev.pluginProps["condition" + str(index)] == "devstatedow": val = self.conditionsDow (dev, index)
 			
-			if propsDict["condition" + str(index)] == "device":
+			if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDate (dev, index)
+			
+			if dev.pluginProps["condition" + str(index)] == "device":
 				val = [0, 0] # Failsafe
-				devEx = indigo.devices[int(propsDict["device" + str(index)])]
-				if eps.valueValid (devEx.states, propsDict["state" + str(index)]):
-					compareString = unicode(devEx.states[propsDict["state" + str(index)]])
-					self.parent.logger.debug ("\tChecking if device state '%s' value of '%s' is equal to '%s'" % (propsDict["state" + str(index)], compareString, propsDict["value" + str(index)]))
+				devEx = indigo.devices[int(dev.pluginProps["device" + str(index)])]
+				if eps.valueValid (devEx.states, dev.pluginProps["state" + str(index)]):
+					compareString = unicode(devEx.states[dev.pluginProps["state" + str(index)]])
+					self.debugLog ("\tChecking if device state '%s' value of '%s' is equal to '%s'" % (dev.pluginProps["state" + str(index)], compareString, dev.pluginProps["value" + str(index)]))
 					
-					if compareString.lower() == propsDict["value" + str(index)].lower():
+					if compareString.lower() == dev.pluginProps["value" + str(index)].lower():
 						val[0] = 1
 						val[1] = 0
 					else:
 						val[0] = 0
 						val[1] = 1
 						
-			if propsDict["condition" + str(index)] == "variable":
+			if dev.pluginProps["condition" + str(index)] == "variable":
 				val = [0, 0] # Failsafe
-				var = indigo.variables[int(propsDict["variable" + str(index)])]
+				var = indigo.variables[int(dev.pluginProps["variable" + str(index)])]
 				compareString = unicode(var.value)
-				self.parent.logger.debug ("\tChecking if variable '%s' value of '%s' is equal to '%s'" % (var.name, compareString, propsDict["value" + str(index)]))
+				self.debugLog ("\tChecking if variable '%s' value of '%s' is equal to '%s'" % (var.name, compareString, dev.pluginProps["value" + str(index)]))
 									
-				if compareString.lower() == propsDict["value" + str(index)].lower():
+				if compareString.lower() == dev.pluginProps["value" + str(index)].lower():
 					val[0] = 1
 					val[1] = 0
 				else:
 					val[0] = 0
 					val[1] = 1
 			
-			if propsDict["evaluation" + str(index)] == "equal":
+			if dev.pluginProps["evaluation" + str(index)] == "equal":
 				isTrue = isTrue + val[0]
 				isFalse = isFalse + val[1]						
 			else:
 				# It's the negative version so reverse the values
-				self.parent.logger.debug ("\tThe value is true and the condition is searching for the opposite, marking result as false: %s" % unicode(val))
 				isTrue = isTrue + val[1]
 				isFalse = isFalse + val[0]
 		
@@ -302,42 +319,47 @@ class conditions:
 	#
 	# Check condition evaluation BETWEEN
 	#
-	def conditionBetween (self, propsDict, index):
+	def conditionBetween (self, dev, index):
 		ret = []
 		isTrue = 0
 		isFalse = 0
 		
 		try:
-			if propsDict["condition" + str(index)] == "datetime" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "vardatetime": val = self.conditionsDate (propsDict, index)
+			#if dev.pluginProps["condition" + str(index)] == "timeonly" or dev.pluginProps["condition" + str(index)] == "devstatetimeonly" or dev.pluginProps["condition" + str(index)] == "vartimeonly": val = self.conditionsDateBetween (dev, index, True, False)
+			#if dev.pluginProps["condition" + str(index)] == "dateonly" or dev.pluginProps["condition" + str(index)] == "devstatedateonly" or dev.pluginProps["condition" + str(index)] == "vardateonly": val = self.conditionsDateBetween (dev, index, False, True)
+			#if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDateBetween (dev, index, True, True)
+			#if dev.pluginProps["condition" + str(index)] == "dow" or dev.pluginProps["condition" + str(index)] == "devstatedow": val = self.conditionsDow (dev, index)
 			
-			if propsDict["condition" + str(index)] == "device":
+			if dev.pluginProps["condition" + str(index)] == "datetime" or dev.pluginProps["condition" + str(index)] == "devstatedatetime" or dev.pluginProps["condition" + str(index)] == "vardatetime": val = self.conditionsDate (dev, index)
+			
+			if dev.pluginProps["condition" + str(index)] == "device":
 				val = [0, 0] # Failsafe
-				devEx = indigo.devices[int(propsDict["device" + str(index)])]
-				if eps.valueValid (devEx.states, propsDict["state" + str(index)]):
-					compareString = unicode(devEx.states[propsDict["state" + str(index)]])
-					self.parent.logger.debug ("\tChecking if device state '%s' value of '%s' is between '%s' and '%s'" % (propsDict["state" + str(index)], compareString, propsDict["value" + str(index)], propsDict["endValue" + str(index)]))
+				devEx = indigo.devices[int(dev.pluginProps["device" + str(index)])]
+				if eps.valueValid (devEx.states, dev.pluginProps["state" + str(index)]):
+					compareString = unicode(devEx.states[dev.pluginProps["state" + str(index)]])
+					self.debugLog ("\tChecking if device state '%s' value of '%s' is between '%s' and '%s'" % (dev.pluginProps["state" + str(index)], compareString, dev.pluginProps["value" + str(index)], dev.pluginProps["endValue" + str(index)]))
 					
-					if compareString.lower() >= propsDict["value" + str(index)].lower() and compareString.lower() <= propsDict["endValue" + str(index)].lower():
+					if compareString.lower() >= dev.pluginProps["value" + str(index)].lower() and compareString.lower() <= dev.pluginProps["endValue" + str(index)].lower():
 						val[0] = 1
 						val[1] = 0
 					else:
 						val[0] = 0
 						val[1] = 1
 						
-			if propsDict["condition" + str(index)] == "variable":
+			if dev.pluginProps["condition" + str(index)] == "variable":
 				val = [0, 0] # Failsafe
-				var = indigo.variables[int(propsDict["variable" + str(index)])]
+				var = indigo.variables[int(dev.pluginProps["variable" + str(index)])]
 				compareString = unicode(var.value)
-				self.parent.logger.debug ("\tChecking if variable '%s' value of '%s' is between '%s' and '%s'" % (var.name, compareString, propsDict["value" + str(index)], propsDict["endValue" + str(index)]))
+				self.debugLog ("\tChecking if variable '%s' value of '%s' is between '%s' and '%s'" % (var.name, compareString, dev.pluginProps["value" + str(index)], dev.pluginProps["endValue" + str(index)]))
 									
-				if compareString.lower() >= propsDict["value" + str(index)].lower() and compareString.lower() <= propsDict["endValue" + str(index)].lower():
+				if compareString.lower() >= dev.pluginProps["value" + str(index)].lower() and compareString.lower() <= dev.pluginProps["endValue" + str(index)].lower():
 					val[0] = 1
 					val[1] = 0
 				else:
 					val[0] = 0
 					val[1] = 1
 		
-			if propsDict["evaluation" + str(index)] == "between":
+			if dev.pluginProps["evaluation" + str(index)] == "between":
 				isTrue = isTrue + val[0]
 				isFalse = isFalse + val[1]						
 			else:
@@ -363,7 +385,7 @@ class conditions:
 	#
 	# Evaluate conditions for date/time
 	#
-	def conditionsDate (self, propsDict, index):
+	def conditionsDate (self, dev, index):
 		ret = []
 		isTrue = 0
 		isFalse = 0
@@ -371,49 +393,45 @@ class conditions:
 		try:
 			d = indigo.server.getTime()
 			
-			# Since we don't evaluate seconds, we have to convert d to a 0 second date/time
-			dx = d.strftime("%Y-%m-%d %H:%M:00")
-			d = datetime.datetime.strptime (dx, "%Y-%m-%d %H:%M:%S")
-			
 			# If we are using a device state date (has devstate as prefix) then use that date instead
-			if string.find (propsDict["condition" + str(index)], 'devstate') > -1:
-				devEx = indigo.devices[int(propsDict["device" + str(index)])]
-				d = self.getDevStateDateTime (propsDict, devEx, index)
+			if string.find (dev.pluginProps["condition" + str(index)], 'devstate') > -1:
+				devEx = indigo.devices[int(dev.pluginProps["device" + str(index)])]
+				d = self.getDevStateDateTime (dev, devEx, index)
 				
 			# If using a variable
-			if string.find (propsDict["condition" + str(index)], 'var') > -1:
-				d = self.getVarDateTime (propsDict, index)
+			if string.find (dev.pluginProps["condition" + str(index)], 'var') > -1:
+				d = self.getVarDateTime (dev, index)
 				
 			# Get the comparison
-			startDate = self.getDateComparison (propsDict, index, d, "start")
+			startDate = self.getDateComparison (dev, index, d, "start")
 				
-			if propsDict["evaluation" + str(index)] == "equal" or propsDict["evaluation" + str(index)] == "notequal":
-				self.parent.logger.debug ("\tChecking if calculated date of %s is equal to comparison date %s" % (startDate.strftime ("%Y-%m-%d %H:%M"), d.strftime ("%Y-%m-%d %H:%M")))
+			if dev.pluginProps["evaluation" + str(index)] == "equal" or dev.pluginProps["evaluation" + str(index)] == "notequal":
+				self.debugLog ("\tChecking if calculated date of %s is equal to comparison date %s" % (startDate.strftime ("%Y-%m-%d %H:%M"), d.strftime ("%Y-%m-%d %H:%M")))
 				
 				if startDate == d:
 					isTrue = 1
 				else:
 					isFalse = 1
 					
-			if propsDict["evaluation" + str(index)] == "greater":
-				self.parent.logger.debug ("\tChecking if calculated date of %s is greater than comparison date %s" % (startDate.strftime ("%Y-%m-%d %H:%M"), d.strftime ("%Y-%m-%d %H:%M")))
+			if dev.pluginProps["evaluation" + str(index)] == "greater":
+				self.debugLog ("\tChecking if calculated date of %s is greater than comparison date %s" % (startDate.strftime ("%Y-%m-%d %H:%M"), d.strftime ("%Y-%m-%d %H:%M")))
 				
 				if startDate > d:
 					isTrue = 1
 				else:
 					isFalse = 1
 					
-			if propsDict["evaluation" + str(index)] == "less":
-				self.parent.logger.debug ("\tChecking if calculated date of %s is less than comparison date %s" % (startDate.strftime ("%Y-%m-%d %H:%M"), d.strftime ("%Y-%m-%d %H:%M")))
+			if dev.pluginProps["evaluation" + str(index)] == "less":
+				self.debugLog ("\tChecking if calculated date of %s is less than comparison date %s" % (startDate.strftime ("%Y-%m-%d %H:%M"), d.strftime ("%Y-%m-%d %H:%M")))
 				
 				if startDate < d:
 					isTrue = 1
 				else:
 					isFalse = 1
 					
-			if propsDict["evaluation" + str(index)] == "between" or propsDict["evaluation" + str(index)] == "notbetween":
-				endDate = self.getDateComparison (propsDict, index, d, "end")
-				self.parent.logger.debug ("\tChecking if comparison date of %s is between calculated dates of %s to %s" % (d.strftime ("%Y-%m-%d %H:%M"), startDate.strftime ("%Y-%m-%d %H:%M"), endDate.strftime ("%Y-%m-%d %H:%M")))
+			if dev.pluginProps["evaluation" + str(index)] == "between" or dev.pluginProps["evaluation" + str(index)] == "notbetween":
+				endDate = self.getDateComparison (dev, index, d, "end")
+				self.debugLog ("\tChecking if comparison date of %s is between calculated dates of %s to %s" % (d.strftime ("%Y-%m-%d %H:%M"), startDate.strftime ("%Y-%m-%d %H:%M"), endDate.strftime ("%Y-%m-%d %H:%M")))
 				
 				if d >= startDate and d <= endDate:
 					isTrue = 1
@@ -470,7 +488,7 @@ class conditions:
 	#
 	# Evaluate conditional date against passed date and create a date to compare to
 	#
-	def getDateComparison (self, propsDict, index, d, prefix):
+	def getDateComparison (self, dev, index, d, prefix):
 		curDate = indigo.server.getTime()
 		
 		try:
@@ -484,85 +502,49 @@ class conditions:
 			second = 0 # we never care about seconds
 			
 			# Evaluate the year
-			if propsDict[prefix + "Year" + str(index)] == "any": 
+			if dev.pluginProps[prefix + "Year" + str(index)] == "any": 
 				year = year # do nothing, the default is already this
 				
-			elif propsDict[prefix + "Year" + str(index)] == "current": 
+			elif dev.pluginProps[prefix + "Year" + str(index)] == "current": 
 				year = int(curDate.strftime("%Y"))
 				
-			elif propsDict[prefix + "Year" + str(index)] == "last": 
+			elif dev.pluginProps[prefix + "Year" + str(index)] == "last": 
 				year = int(curDate.strftime("%Y")) - 1
 				
-			elif propsDict[prefix + "Year" + str(index)] == "last": 
+			elif dev.pluginProps[prefix + "Year" + str(index)] == "last": 
 				year = int(curDate.strftime("%Y")) + 1	
 			
 			else:
-				year = int(propsDict[prefix + "Year" + str(index)]) # with no other options, they chose an actual year
+				year = int(dev.pluginProps[prefix + "Year" + str(index)]) # with no other options, they chose an actual year
 				
 			
-			# Evaluate the month - 2.0
-			if propsDict[prefix + "Month" + str(index)] == "any": 
-				month = month # the default
-				
-			elif propsDict[prefix + "Month" + str(index)] == "this":
-				month = int(curDate.strftime("%m"))
-				
-			elif propsDict[prefix + "Month" + str(index)] == "last":
-				year = int(curDate.strftime("%Y"))
-				month = int(curDate.strftime("%m"))
-				day = int(curDate.strftime("%d"))
-				
-				month = month - 1
-				if month < 1:
-					year = year - 1
-					month = 12
-				
-				# Check that the new date allows for todays day number
-				dayx = calendar.monthrange(year, month)
-				if dayx[1] < day: day = dayx[1]
-				
-			else:
-				month = int(propsDict[prefix + "Month" + str(index)]) # they chose the month
+			# Evaluate the month
+			if dev.pluginProps[prefix + "Month" + str(index)] != "any": month = int(dev.pluginProps[prefix + "Month" + str(index)])
 			
 			# Evaluate the day
-			if propsDict[prefix + "Day" + str(index)] == "any":
+			if dev.pluginProps[prefix + "Day" + str(index)] == "any":
 				day = day # do nothing, the default is already this
 				
-			elif propsDict[prefix + "Day" + str(index)] == "first" or propsDict[prefix + "Day" + str(index)] == "second" or propsDict[prefix + "Day" + str(index)] == "third" or propsDict[prefix + "Day" + str(index)] == "fourth" or propsDict[prefix + "Day" + str(index)] == "last":
-				newdate = self.getDayIteration(year, month, propsDict[prefix + "Day" + str(index)], propsDict[prefix + "Dow" + str(index)])
+			elif dev.pluginProps[prefix + "Day" + str(index)] == "first" or dev.pluginProps[prefix + "Day" + str(index)] == "second" or dev.pluginProps[prefix + "Day" + str(index)] == "third" or dev.pluginProps[prefix + "Day" + str(index)] == "fourth" or dev.pluginProps[prefix + "Day" + str(index)] == "last":
+				newdate = self.getDayIteration(year, month, dev.pluginProps[prefix + "Day" + str(index)], dev.pluginProps[prefix + "Dow" + str(index)])
 				year = int(newdate.strftime("%Y"))
 				month = int(newdate.strftime("%m"))
 				day = int(newdate.strftime("%d"))
 				
-			elif propsDict[prefix + "Day" + str(index)] == "today":
-				year = int(curDate.strftime("%Y"))
-				month = int(curDate.strftime("%m"))
-				day = int(curDate.strftime("%d"))
-				
-			elif propsDict[prefix + "Day" + str(index)] == "yesterday":
-				newdate = dtutil.DateAdd ("days", -1, curDate)
-				year = int(newdate.strftime("%Y"))
-				month = int(newdate.strftime("%m"))
-				day = int(newdate.strftime("%d"))
-				
-			elif propsDict[prefix + "Day" + str(index)] == "lastday":
+			elif dev.pluginProps[prefix + "Day" + str(index)] == "lastday":
 				day = calendar.monthrange(year, month)
 				day = day[1]
 				
 			else:
-				day = int(propsDict[prefix + "Day" + str(index)]) # they chose a day
+				day = int(dev.pluginProps[prefix + "Day" + str(index)]) # they chose a day
 				
 				
 			# Evaluate the time
-			if propsDict[prefix + "Time" + str(index)] == "any":
+			if dev.pluginProps[prefix + "Time" + str(index)] == "any":
 				hour = hour # do nothing, the default is already this
 				
-			if propsDict[prefix + "Time" + str(index)] == "now": # 2.0
-				hour = int(curDate.strftime("%H"))
-				minute = int(curDate.strftime("%M"))
-				
 			else:
-				time = propsDict[prefix + "Time" + str(index)]
+				time = dev.pluginProps[prefix + "Time" + str(index)]
 				time = time.split(":")
 				hour = int(time[0])
 				minute = int(time[1])
@@ -586,14 +568,14 @@ class conditions:
 	#
 	# Get variable date and time in user format
 	#
-	def getVarDateTime (self, propsDict, index):
+	def getVarDateTime (self, dev, index):
 		d = indigo.server.getTime()
 		
 		try:
-			if eps.valueValid (propsDict, "variable" + str(index), True) and eps.valueValid (propsDict, "dtFormat" + str(index), True):
-				compareString = indigo.variables[int(propsDict["variable" + str(index)])].value
-				self.parent.logger.debug ("\tConverting variable '%s' date of '%s' using format '%s'" % (indigo.variables[int(propsDict["variable" + str(index)])].name, compareString, propsDict["dtFormat" + str(index)]))
-				d = datetime.datetime.strptime (compareString, propsDict["dtFormat" + str(index)])
+			if eps.valueValid (dev.pluginProps, "variable" + str(index), True) and eps.valueValid (dev.pluginProps, "dtFormat" + str(index), True):
+				compareString = indigo.variables[int(dev.pluginProps["variable" + str(index)])].value
+				self.debugLog ("\tConverting variable '%s' date of '%s' using format '%s'" % (indigo.variables[int(dev.pluginProps["variable" + str(index)])].name, compareString, dev.pluginProps["dtFormat" + str(index)]))
+				d = datetime.datetime.strptime (compareString, dev.pluginProps["dtFormat" + str(index)])
 				
 		except Exception as e:
 			eps.printException(e) 
@@ -603,14 +585,14 @@ class conditions:
 	#
 	# Get device state date and time in user format
 	#
-	def getDevStateDateTime (self, propsDict, devEx, index):
+	def getDevStateDateTime (self, dev, devEx, index):
 		d = indigo.server.getTime()
 		
 		try:
-			if eps.valueValid (devEx.states, propsDict["state" + str(index)]) and eps.valueValid (propsDict, "dtFormat" + str(index), True):
-				compareString = unicode(devEx.states[propsDict["state" + str(index)]])
-				self.parent.logger.debug ("\tConverting state '%s' date of '%s' using format '%s'" % (propsDict["state" + str(index)], compareString, propsDict["dtFormat" + str(index)]))
-				d = datetime.datetime.strptime (compareString, propsDict["dtFormat" + str(index)])
+			if eps.valueValid (devEx.states, dev.pluginProps["state" + str(index)]) and eps.valueValid (dev.pluginProps, "dtFormat" + str(index), True):
+				compareString = unicode(devEx.states[dev.pluginProps["state" + str(index)]])
+				self.debugLog ("\tConverting state '%s' date of '%s' using format '%s'" % (dev.pluginProps["state" + str(index)], compareString, dev.pluginProps["dtFormat" + str(index)]))
+				d = datetime.datetime.strptime (compareString, dev.pluginProps["dtFormat" + str(index)])
 		
 		except Exception as e:
 			eps.printException(e) 
@@ -625,7 +607,7 @@ class conditions:
 	# Validate the UI
 	#
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
-		self.parent.logger.debug ("Validating conditions on device")
+		self.debugLog ("Validating conditions on device")
 		errorDict = indigo.Dict()
 		msg = ""
 		
@@ -642,33 +624,6 @@ class conditions:
 						msg += "Condition %i is missing required variable.  " % i
 						
 				if valuesDict["condition" + str(i)] == "datetime" or valuesDict["condition" + str(i)] == "devstatedatetime" or valuesDict["condition" + str(i)] == "vardatetime":
-					if valuesDict["startDay" + str(i)] == "today" or valuesDict["startDay" + str(i)] == "yesterday": # 2.0
-						if valuesDict["startDow" + str(i)] != "any":
-							errorDict["startDow" + str(i)] = "Must use 'any' when using today or yesterday as the date"
-							msg += "Condition %i is using '%s' as the start day and not 'any' for the day of the week.\n\n" % (i, valuesDict["startDay" + str(i)])
-						
-						if valuesDict["startYear" + str(i)] != "any":
-							errorDict["startYear" + str(i)] = "Must use 'any' when using today or yesterday as the date"
-							msg += "Condition %i is using '%s' as the start day and not 'any' for the year.\n\n" % (i, valuesDict["startDay" + str(i)])
-							
-						if valuesDict["startMonth" + str(i)] != "any":
-							errorDict["startMonth" + str(i)] = "Must use 'any' when using today or yesterday as the date"
-							msg += "Condition %i is using '%s' as the start day and not 'any' for the month.\n\n" % (i, valuesDict["startDay" + str(i)])
-
-					if valuesDict["evaluation" + str(i)] == "between" or valuesDict["evaluation" + str(i)] == "notbetween":							
-						if valuesDict["endDay" + str(i)] == "today" or valuesDict["endDay" + str(i)] == "yesterday": # 2.0
-							if valuesDict["endDow" + str(i)] != "any":
-								errorDict["endDow" + str(i)] = "Must use 'any' when using today or yesterday as the date"
-								msg += "Condition %i is using '%s' as the end day and not 'any' for the day of the week.\n\n" % (i, valuesDict["startDay" + str(i)])
-						
-							if valuesDict["endYear" + str(i)] != "any":
-								errorDict["endYear" + str(i)] = "Must use 'any' when using today or yesterday as the date"
-								msg += "Condition %i is using '%s' as the end day and not 'any' for the year.\n\n" % (i, valuesDict["startDay" + str(i)])
-							
-							if valuesDict["endMonth" + str(i)] != "any":
-								errorDict["endMonth" + str(i)] = "Must use 'any' when using today or yesterday as the date"
-								msg += "Condition %i is using '%s' as the end day and not 'any' for the month.\n\n" % (i, valuesDict["startDay" + str(i)])
-													
 					if valuesDict["startDay" + str(i)] == "first" or valuesDict["startDay" + str(i)] == "second" or valuesDict["startDay" + str(i)] == "third" or valuesDict["startDay" + str(i)] == "fourth" or valuesDict["startDay" + str(i)] == "last":
 						if valuesDict["startDow" + str(i)] == "any":
 							errorDict["startDow" + str(i)] = "Can't use 'any' when using calculations in the day field"
@@ -739,17 +694,7 @@ class conditions:
 			
 			x = string.find (filter, 'monthdays')
 			if x > -1:
-				options = ["today|today", "yesterday|yesterday", "lastday|last day of the month", "first|first week day", "second|second week day", "third|third week day", "fourth|fourth week day", "last|last week day"]
-				
-				for s in options:
-					data = s.split("|")
-					option = (data[0], data[1])
-					ret.insert(i, option)
-					i = i + 1 # move the line
-					
-			x = string.find (filter, 'months') # 2.0
-			if x > -1:
-				options = ["this|this month", "last|last month"]
+				options = ["lastday|last day of the month", "first|first week day", "second|second week day", "third|third week day", "fourth|fourth week day", "last|last week day"]
 				
 				for s in options:
 					data = s.split("|")
@@ -765,30 +710,8 @@ class conditions:
 					option = (data[0], data[1])
 					ret.insert(i, option)
 					i = i + 1 # move the line
-					
-			if filter == "dow": # 2.0
-				options = ["today|today"]
-				
-				for s in options:
-					data = s.split("|")
-					option = (data[0], data[1])
-					ret.insert(i, option)
-					i = i + 1 # move the line
-					
-			if filter == "times": # 2.0
-				options = ["now|now"]
-				
-				for s in options:
-					data = s.split("|")
-					option = (data[0], data[1])
-					ret.insert(i, option)
-					i = i + 1 # move the line
 			
-			line = ""
-			for z in range (0, 20):
-				line += unicode("\xc4", "cp437")
-		
-			option = ("-1", line)
+			option = ("-1", "----------------------------------")
 			ret.insert(i, option)
 			
 		except Exception as e:
@@ -806,7 +729,7 @@ class conditions:
 			# See if this is a brand new device and if it is then set defaults
 			if eps.valueValid (dev.pluginProps, "isNewDevice"):
 				if dev.pluginProps["isNewDevice"]:
-					#self.parent.logger.error("%s added, enabling conditions.  You can now re-open the device to use conditions" % dev.name)
+					#indigo.server.log("%s added, enabling conditions.  You can now re-open the device to use conditions" % dev.name)
 					props["conditions"] = "none"
 					props["isNewDevice"] = False
 					
@@ -842,7 +765,7 @@ class conditions:
 						props = self.setUIDefaults (props, "disabled", "onOffState")
 					
 			if props != dev.pluginProps: 
-				self.parent.logger.debug ("Collapsing all conditions for %s" % dev.name)
+				self.debugLog ("Collapsing all conditions for %s" % dev.name)
 				dev.replacePluginPropsOnServer(props)
 			
 		except Exception as e:
@@ -948,7 +871,7 @@ class conditions:
 		try:
 			# Make sure times are defaulted
 			if eps.valueValid (valuesDict, "startTime1", True) == False:
-				self.parent.logger.debug ("Setting default values")
+				self.debugLog ("Setting default values")
 				for i in range (1, self.maxConditions + 1):
 					if eps.valueValid (valuesDict, "condition" + str(i)): valuesDict["condition" + str(i)] = defaultCondition
 					if eps.valueValid (valuesDict, "evaluation" + str(i)): valuesDict["evaluation" + str(i)] = "equal"
@@ -969,13 +892,13 @@ class conditions:
 			
 			# If everything is collapsed then show the full placeholder if conditions are enabled
 			if valuesDict["currentCondition"] == "0" and valuesDict["conditions"] != "none":
-				self.parent.logger.debug("Current block is 0, setting placeholder")
+				self.debugLog("Current block is 0, setting placeholder")
 				valuesDict["noneExpanded"] = True
 			else:
 				valuesDict["noneExpanded"] = False
 			
 			
-			#self.parent.logger.error("\n" + unicode(valuesDict))
+			#indigo.server.log("\n" + unicode(valuesDict))
 			return valuesDict
 						
 		except Exception as e:
@@ -1008,13 +931,13 @@ class conditions:
 						
 			# If there are no conditions
 			if valuesDict["conditions"] == False:
-				self.parent.logger.debug ("No conditions, current block is 0")
+				self.debugLog ("No conditions, current block is 0")
 				valuesDict["currentCondition"] = "0" # it's the current condition and got collapsed, meaning all are collapsed
 				return valuesDict
 			
 			# If it's collapsed then show that placeholder and return
 			if valuesDict["expandConditions" + cb] == False:
-				self.parent.logger.debug ("All blocks collapsed, current block is 0")
+				self.debugLog ("All blocks collapsed, current block is 0")
 				valuesDict["currentCondition"] = "0" # it's the current condition and got collapsed, meaning all are collapsed
 				return valuesDict
 			
@@ -1083,7 +1006,7 @@ class conditions:
 					valuesDict = self.setUIValueVisibility (valuesDict, i) # also hide options
 					
 			# Save the current block
-			self.parent.logger.debug ("Current condition block set to %i" % currentBlock)
+			self.debugLog ("Current condition block set to %i" % currentBlock)
 			valuesDict["currentCondition"] = str(currentBlock)
 				
 		except Exception as e:
@@ -1112,15 +1035,15 @@ class conditions:
 			valuesDict["hasVariable" + str(index)] = False
 			
 			if valuesDict["conditions"] == "none": 
-				#self.parent.logger.debug ("Condition checking has been turned off, disabling all condition fields")
+				#self.debugLog ("Condition checking has been turned off, disabling all condition fields")
 				return valuesDict # nothing more to do, they turned off condition checking
 				
 			if valuesDict["expandConditions" + str(index)] == False:
-				#self.parent.logger.debug ("Condition %i is collapsed" % index)
+				#self.debugLog ("Condition %i is collapsed" % index)
 				return valuesDict # nothing more to do, they turned off condition checking
 				
 			if valuesDict["condition" + str(index)] == "disabled":
-				#self.parent.logger.debug ("Condition %i is disabled" % index)
+				#self.debugLog ("Condition %i is disabled" % index)
 				return valuesDict # nothing more to do, they turned off condition checking
 			
 			# Turn on start values
@@ -1185,7 +1108,7 @@ class conditions:
 				valuesDict["hasVariable" + str(index)] = True
 								
 			if valuesDict["evaluation" + str(index)] == "between" or valuesDict["evaluation" + str(index)] == "notbetween":
-				self.parent.logger.debug ("Condition %i requires an end value" % index)
+				self.debugLog ("Condition %i requires an end value" % index)
 			
 				# See if we need to show or hide the end value or date/time contains value
 				if valuesDict["condition" + str(index)] == "device" or valuesDict["condition" + str(index)] == "variable":
@@ -1235,7 +1158,7 @@ class conditions:
 					valuesDict["hasEndDate" + str(index)] = True
 					
 				else:
-					self.parent.logger.error ("Unknown between condition for %i" % index)
+					indigo.server.log ("Unknown between condition for %i" % index, isError=True)
 				
 			elif valuesDict["evaluation" + str(index)] == "contains" or valuesDict["evaluation" + str(index)] == "notcontains":
 				# Turn off start date fields since they aren't used here

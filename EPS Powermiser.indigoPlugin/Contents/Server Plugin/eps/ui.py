@@ -6,14 +6,15 @@ import string
 import calendar
 import eps
 
+libversion = "1.0.7"
+
 #
 # Print library version - added optional return in 1.0.2
 #
 def libVersion (returnval = False):
-	ver = "1.0.5"
-	if returnval: return ver
+	if returnval: return libversion
 	
-	indigo.server.log ("##### EPS UI %s #####" % ver)
+	indigo.server.log ("##### EPS UI %s #####" % libversion)
 	
 
 #
@@ -104,6 +105,9 @@ def getPropsForDevice(filter, valuesDict, typeId, targetId):
 		propsAry.append(option)
 		
 	return propsAry
+	
+
+	
 	
 #
 # Compose special data types for menus 1.0.1

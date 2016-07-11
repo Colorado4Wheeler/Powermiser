@@ -19,10 +19,17 @@
 		<Description>monitorChanges</Description>
 	</Field>
     
-    <!-- Debug mode - part of every EPS plugin -->
-    <Field type="checkbox" id="debugMode" defaultValue="false">
-		<Label> </Label>
-		<Description>Enable debug logging</Description>
+    <!-- Logging level - part of every EPS plugin - Indigo 7 centric -->
+	<Field type="menu" id="logLevel" defaultValue="20">
+		<Label>Log Level:</Label>
+		<List>
+			<Option value="5">Thread</Option>
+			<Option value="10">Debug</Option>
+			<Option value="20">Info</Option>
+			<Option value="30">Warning</Option>
+			<Option value="40">Error</Option>
+			<Option value="50">Critical</Option>
+		</List>
 	</Field>
 	
 	<!-- Any specialized plugin-specific options, hidden or otherwise, for THIS plugin -->

@@ -4,6 +4,8 @@ import time
 import indigo
 import eps
 
+libversion = "1.2.1"
+
 # Various date/time (or datetime) utilities
 
 
@@ -11,10 +13,9 @@ import eps
 # Print library version - added optional return in 1.1.1
 #
 def libVersion (returnval = False):
-	ver = "1.2.1"
-	if returnval: return ver
+	if returnval: return libversion
 	
-	indigo.server.log ("##### EPS UI %s #####" % ver)
+	indigo.server.log ("##### DT %s #####" % libversion)
 
 #
 # Format total seconds into a HH:MM:SS type format

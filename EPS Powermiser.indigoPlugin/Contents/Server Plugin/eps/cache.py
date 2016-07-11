@@ -23,7 +23,7 @@ class cache:
 	# Initialize the class
 	#
 	def __init__ (self, parent, pluginId, pollingMode = "realTime", pollingInterval = 1, pollingFrequency = "s"):
-		self.version = "2.22"
+		self.version = "2.23"
 		
 		self.pluginId = pluginId
 		self.parent = parent
@@ -64,7 +64,7 @@ class cache:
 		self.cachePluginPrefs()
 	
 	#
-	# Print library version
+	# Print library version (depreciated)
 	#
 	def libVersion (self):
 		indigo.server.log (u"##### EPS Cache %s #####" % self.version)
@@ -507,13 +507,13 @@ class cache:
 	# Resolve the device ID for an address - 2.22
 	#
 	def deviceForAddress (self, address):
-		if self.addressInCache (address) == False: return False
+		if self.addressInCache (unicode(address)) == False: return False
 		
 		ret = []
 		
 		for devId, devProps in self.devices.iteritems():
 			for subId, subProps in devProps["subDevices"].iteritems():
-				if subProps["address"] == address: 
+				if unicode(subProps["address"]) == unicode(address): 
 					alreadythere = False
 					for s in ret:
 						if s == int(subId): alreadythere = True
