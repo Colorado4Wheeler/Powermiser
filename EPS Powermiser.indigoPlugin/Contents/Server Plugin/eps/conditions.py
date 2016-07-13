@@ -18,7 +18,7 @@ class conditions:
 		self.maxConditions = 10
 		self.enablePlaceholders = True 
 		
-		self.version = "2.1"
+		self.version = "2.2"
 		
 	#
 	# Debug log
@@ -57,21 +57,134 @@ class conditions:
 				if propsDict["evaluation" + str(i)] == "greater": val = self.conditionGreater (propsDict, i)
 				if propsDict["evaluation" + str(i)] == "less": val = self.conditionLess (propsDict, i)
 				if propsDict["evaluation" + str(i)] == "contains" or propsDict["evaluation" + str(i)] == "notcontains": val = self.conditionContain (propsDict, i)
+				if propsDict["evaluation" + str(i)] == "in" or propsDict["evaluation" + str(i)] == "notin": val = self.conditionIn (propsDict, i) # 2.2
 					
 				isTrue = isTrue + val[0]
 				isFalse = isFalse + val[1]			
 		
 			self.parent.logger.debug("\tConditions returning true: %i, returning false: %i" % (isTrue, isFalse))
 		
-			if condition == "alltrue" and isFalse <> 0: return False
-			if condition == "anytrue" and isTrue == 0: return False
-			if condition == "allfalse" and isTrue <> 0: return False
-			if condition == "anyfalse" and isFalse == 0: return False
+			if condition == "alltrue" and isFalse <> 0: 
+				self.parent.logger.debug("\tCondition checking is for All True and there is a false value")
+				return False
+			if condition == "anytrue" and isTrue == 0: 
+				self.parent.logger.debug("\tCondition checking is for Any True and there are no true values")
+				return False
+			if condition == "allfalse" and isTrue <> 0: 
+				self.parent.logger.debug("\tCondition checking is for All False and there is a true value")
+				return False
+			if condition == "anyfalse" and isFalse == 0: 
+				self.parent.logger.debug("\tCondition checking is for Any False and there are no false values")
+				return False
+			
+			return True
 		
 		except Exception as e:
 			eps.printException(e) 
 			return False
 	
+	
+	#
+	# Check condition evaluation IN
+	#
+	def conditionIn (self, propsDict, index):
+		ret = []
+		isTrue = 0
+		isFalse = 0
+		
+		try:
+			compareString = ""
+			devEx = None
+			
+			if propsDict["condition" + str(index)] == "device" or propsDict["condition" + str(index)] == "devstatedateonly" or propsDict["condition" + str(index)] == "devstatetimeonly" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "devstatedow":
+				devEx = indigo.devices[int(propsDict["device" + str(index)])]
+			
+			if propsDict["condition" + str(index)] == "device":
+				if eps.valueValid (devEx.states, propsDict["state" + str(index)]):
+					compareString = unicode(devEx.states[propsDict["state" + str(index)]])
+			
+			elif propsDict["condition" + str(index)] == "variable":
+				var = indigo.variables[int(propsDict["variable" + str(index)])]
+				compareString = unicode(var.value)
+				
+			elif propsDict["condition" + str(index)] == "datetime" or propsDict["condition" + str(index)] == "devstatedatetime" or propsDict["condition" + str(index)] == "vardatetime":			
+				d = indigo.server.getTime()
+				if propsDict["condition" + str(index)] == "devstatedatetime": d = self.getDevStateDateTime (propsDict, devEx, index)
+				if propsDict["condition" + str(index)] == "vardatetime": d = self.getVarDateTime (propsDict, index)
+				
+				# Get the comparison
+				startDate = self.getDateComparison (propsDict, index, d, "start")
+				
+				#compareString = d.strftime ("%Y-%m-%d %H:%M:%S | %m %b %B | %A %w | %I | %p")
+				compareString = ""
+				
+				# Build a compare string based on the date/time options
+				if propsDict["startDow" + str(index)] != "any":	
+					if compareString == "":
+						compareString += startDate.strftime("%A")
+					else:
+						compareString += startDate.strftime(" %A")
+						
+				if propsDict["startMonth" + str(index)] != "any": 
+					if compareString == "":
+						compareString += startDate.strftime("%B")
+					else:
+						compareString += startDate.strftime(" %B")
+						
+				if propsDict["startDay" + str(index)] != "any":	
+					if compareString == "":
+						compareString += startDate.strftime("%d")
+					else:
+						compareString += startDate.strftime(" %-d")
+						
+				if propsDict["startYear" + str(index)] != "any": 
+					if compareString == "":
+						compareString += startDate.strftime("%Y")
+					else:
+						compareString += startDate.strftime(" %Y")
+						
+				if propsDict["startTime" + str(index)] != "any": 
+					if compareString == "":
+						compareString += startDate.strftime("%H:%M %p")
+					else:
+						compareString += startDate.strftime(" %H:%M %p")
+				
+			else:
+				self.parent.logger.error("Unknown condition %s in contains" % propsDict["condition" + str(index)])
+				
+			self.parent.logger.debug ("\tChecking if %s is in %s" % (compareString, propsDict["value" + str(index)]))
+			
+			compareValue = ""
+			if compareString != "": compareValue = compareString.lower()
+			
+			findValue = ""
+			if propsDict["value" + str(index)] != "": findValue = str(propsDict["value" + str(index)]).lower()
+			
+			if findValue != "":
+				foundAt = string.find (findValue.lower(), compareString.lower())
+				self.parent.logger.threaddebug("Looking for %s in %s resulted in an index of %i" % (compareValue, findValue, foundAt))
+			
+				if foundAt > -1:
+					isTrue = 1	
+				else:
+					# It's the negative version so reverse the values
+					isFalse = 1
+			
+			else:
+				if compareValue == "":
+					isTrue = 1
+				else:
+					isFalse = 1
+					
+		except Exception as e:
+			eps.printException(e) 
+			isTrue = 0
+			isFalse = 0
+			
+		ret.append(isTrue)
+		ret.append(isFalse)
+		
+		return ret
 	
 	#
 	# Check condition evaluation CONTAINS
@@ -116,7 +229,8 @@ class conditions:
 			
 			if findValue != "":
 				foundAt = string.find (compareString, findValue)
-			
+				self.parent.logger.threaddebug("Looking for %s in %s resulted in an index of %i" % (findValue, compareValue, foundAt))
+				
 				if foundAt > -1:
 					isTrue = 1	
 				else:
@@ -557,7 +671,7 @@ class conditions:
 			if propsDict[prefix + "Time" + str(index)] == "any":
 				hour = hour # do nothing, the default is already this
 				
-			if propsDict[prefix + "Time" + str(index)] == "now": # 2.0
+			elif propsDict[prefix + "Time" + str(index)] == "now": # 2.0
 				hour = int(curDate.strftime("%H"))
 				minute = int(curDate.strftime("%M"))
 				
@@ -882,7 +996,7 @@ class conditions:
 			if popupList is None:
 				popupList = []
 				
-			evalList = ["equal|Equal to", "notequal|Not equal to", "greater|Greater than", "less|Less than", "between|Between", "notbetween|Not between", "contains|Containing", "notcontains|Not containing"]
+			evalList = ["equal|Equal to", "notequal|Not equal to", "greater|Greater than", "less|Less than", "between|Between", "notbetween|Not between", "contains|Containing", "notcontains|Not containing", "in|In", "notin|Not in"]
 			
 			for s in evalList:
 				eval = s.split("|")
@@ -1242,6 +1356,24 @@ class conditions:
 				valuesDict["hasStartTime" + str(index)] = False
 				valuesDict["hasStartDate" + str(index)] = False
 				valuesDict["hasStartDow" + str(index)] = False
+				
+				valuesDict["hasEndValue" + str(index)] = False
+				valuesDict["hasEndTime" + str(index)] = False
+				valuesDict["hasEndDate" + str(index)] = False
+				valuesDict["hasEndDow" + str(index)] = False
+				valuesDict["hasStartValue" + str(index)] = True
+				
+			elif valuesDict["evaluation" + str(index)] == "in" or valuesDict["evaluation" + str(index)] == "notin": # 2.2
+				if valuesDict["condition" + str(index)] == "datetime":
+					valuesDict["hasStartTime" + str(index)] = True
+					valuesDict["hasStartDate" + str(index)] = True
+					valuesDict["hasStartDow" + str(index)] = True
+					
+				else:				
+					# Turn off start date fields since they aren't used here
+					valuesDict["hasStartTime" + str(index)] = False
+					valuesDict["hasStartDate" + str(index)] = False
+					valuesDict["hasStartDow" + str(index)] = False
 				
 				valuesDict["hasEndValue" + str(index)] = False
 				valuesDict["hasEndTime" + str(index)] = False

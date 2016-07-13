@@ -60,7 +60,7 @@ class Plugin(indigo.PluginBase):
 				
 			# EPS common startup
 			self.logger.setLevel(int(self.pluginPrefs["logLevel"]))
-			if self.pluginPrefs["logLevel"] < 20: 
+			if int(self.pluginPrefs["logLevel"]) < 20: 
 				self.debug = True
 			else:
 				self.debug = False
