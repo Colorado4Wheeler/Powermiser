@@ -1364,7 +1364,7 @@ class conditions:
 				valuesDict["hasStartValue" + str(index)] = True
 				
 			elif valuesDict["evaluation" + str(index)] == "in" or valuesDict["evaluation" + str(index)] == "notin": # 2.2
-				if valuesDict["condition" + str(index)] == "datetime":
+				if valuesDict["condition" + str(index)] == "datetime" or valuesDict["condition" + str(index)] == "devstatedatetime" or valuesDict["condition" + str(index)] == "vardatetime":
 					valuesDict["hasStartTime" + str(index)] = True
 					valuesDict["hasStartDate" + str(index)] = True
 					valuesDict["hasStartDow" + str(index)] = True
