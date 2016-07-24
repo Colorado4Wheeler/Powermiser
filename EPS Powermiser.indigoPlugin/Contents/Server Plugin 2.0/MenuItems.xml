@@ -77,24 +77,19 @@ Using this method is nit-picking performance since polling is almost equally as 
     <MenuItem id="sep_options"/>
     
     <MenuItem id="libVersion">
-    	<Name>Show Support Information</Name>
-    	<CallbackMethod>pluginMenuSupportInfo</CallbackMethod>
+    	<Name>Show Library Version Summary</Name>
+    	<CallbackMethod>showLibraryVersions</CallbackMethod>
     </MenuItem>
     
     <MenuItem id="supportLog">
     	<Name>Support Data Dump</Name>
-    	<CallbackMethod>pluginMenuSupportData</CallbackMethod>
-    </MenuItem>
-    
-    <MenuItem id="supportLogEx">
-    	<Name>Support Comprehensive Data Dump</Name>
-    	<CallbackMethod>pluginMenuSupportDataEx</CallbackMethod>
+    	<CallbackMethod>supportLog</CallbackMethod>
     </MenuItem>
     
     <MenuItem id="sep_update"/>
     
     <MenuItem id="update">
     	<Name>Check For Plugin Update</Name>
-    	<CallbackMethod>pluginMenuCheckUpdates</CallbackMethod>
+    	<CallbackMethod>updateCheck</CallbackMethod>
     </MenuItem>
 </MenuItems>

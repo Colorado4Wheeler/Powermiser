@@ -6,7 +6,7 @@ import string
 import calendar
 import eps
 
-libversion = "1.0.7"
+libversion = "1.0.8"
 
 #
 # Print library version - added optional return in 1.0.2
@@ -494,7 +494,6 @@ def getPluginDevices(filter, valuesDict, typeId, targetId):
 		return myArray
 	
 	return stateAry
-	
 	
 	
 	

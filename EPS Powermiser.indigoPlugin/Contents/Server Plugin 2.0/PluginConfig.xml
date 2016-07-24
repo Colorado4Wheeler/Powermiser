@@ -23,7 +23,6 @@
 	<Field type="menu" id="logLevel" defaultValue="20">
 		<Label>Log Level:</Label>
 		<List>
-			<Option value="5">Thread Debug</Option>
 			<Option value="10">Debug</Option>
 			<Option value="20">Info</Option>
 			<Option value="30">Warning</Option>
@@ -31,7 +30,7 @@
 			<Option value="50">Critical</Option>
 		</List>
 	</Field>
-   	
-   	<!-- Any specialized plugin-specific options, hidden or otherwise, for THIS plugin -->
+	
+	<!-- Any specialized plugin-specific options, hidden or otherwise, for THIS plugin -->
 	
 </PluginConfig>

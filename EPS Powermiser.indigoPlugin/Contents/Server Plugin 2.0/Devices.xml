@@ -11,7 +11,7 @@
 			
 			<Field type="list" id="devicelist" defaultValue="" rows="6">
 				<Label>Devices:</Label>
-				<List class="self" filter="#filtereddevices#[index=devicelist], onlywith=onOffState]" method="getCustomList" dynamicReload="true"/>
+				<List class="self" filter="onOffState" method="getDevicesWithStates" dynamicReload="true"/>
 			</Field>
 			
 			<Field id="timeOut" type="textfield" defaultValue="5">
@@ -55,8 +55,8 @@
 			
 			<Field type="menu" id="conditions" defaultValue="" visibleBindingId="isNewDevice" visibleBindingValue="false">
 				<Label>Conditions:</Label>
-				<List class="self" filter="#conditions_topmenu#[index=conditions]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="conditionmenu" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			
@@ -67,55 +67,29 @@
 			<Field type="checkbox" id="expandConditions1" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
 				<Label> </Label>
 				<Description>Expand condition 1</Description>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>	
 			
 			<Field type="menu" id="condition1" defaultValue="" visibleBindingId="expandConditions1" visibleBindingValue="true">
 				<Label>Condition:</Label>
-				<List class="self" filter="#conditions_menu#[index=condition1]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasDevice1" defaultValue="false" hidden="true">
 				<Label> </Label>
-				<Description>Show the device field</Description>
+				<Description>Show the device and state fields</Description>
 			</Field>
 			
 			<Field type="menu" id="device1" defaultValue="" visibleBindingId="hasDevice1" visibleBindingValue="true" >
 				<Label>Device:</Label>
 				<List class="indigo.devices"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="checkbox" id="hasState1" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the state field</Description>
-			</Field>
-			
-			<Field type="menu" id="state1" defaultValue="" visibleBindingId="hasState1" visibleBindingValue="true">
+			<Field type="menu" id="state1" defaultValue="" visibleBindingId="hasDevice1" visibleBindingValue="true">
 				<Label>State:</Label>
-				<List class="self" filter="#devicestates#[index=state1, srcfield=device1, allowui=False]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasProp1" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the property field</Description>
-			</Field>
-			
-			<Field type="menu" id="property1" defaultValue="" visibleBindingId="hasProp1" visibleBindingValue="true">
-				<Label>Property:</Label>
-				<List class="self" filter="#devicevalues#[index=property1, srcfield=device1]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasField1" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the config props field</Description>
-			</Field>
-			
-			<Field type="menu" id="field1" defaultValue="" visibleBindingId="hasField1" visibleBindingValue="true">
-				<Label>Config fields:</Label>
-				<List class="self" filter="#devicefields#[index=field1, srcfield=device1, allowui=False]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="device1" method="getStatesForDevice" dynamicReload="true"/>
 			</Field>
 			
 			<Field type="checkbox" id="hasVariable1" defaultValue="false" hidden="true">
@@ -126,7 +100,7 @@
 			<Field type="menu" id="variable1" defaultValue="" visibleBindingId="hasVariable1" visibleBindingValue="true" >
 				<Label>Variable:</Label>
 				<List class="indigo.variables"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasPythonFormat1" defaultValue="false" hidden="true">
@@ -138,52 +112,17 @@
 				<Label>Python date format:</Label>
 			</Field>
 			
-			<Field type="menu" id="evaluation1" defaultValue="equal" visibleBindingId="condition1" visibleBindingValue="device,variable,datetime,dow,devstatedatetime,vardatetime,attributes,fields,devattribdatetime">
+			<Field type="menu" id="evaluation1" defaultValue="equal" visibleBindingId="condition1" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
 				<Label>Is:</Label>
-				<List class="self" filter="#conditions_operators#[index=evaluation1]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			
 			<Field type="checkbox" id="hasStartValue1" defaultValue="false" hidden="true">
 				<Label> </Label>
 				<Description>Show the start value</Description>
-			</Field>	
-			
-			<!-- Future proofing in case we want to incorporate options -->
-			<Field type="checkbox" id="hasFieldOptions1" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional options</Description>
-			</Field>
-			
-			<Field type="menu" id="fieldOptions1" defaultValue="" visibleBindingId="hasFieldOptions1" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#fieldoptions#[index=fieldOptions1, srcfield=field1]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasStateOptions1" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional state options</Description>
-			</Field>
-			
-			<Field type="menu" id="stateOptions1" defaultValue="" visibleBindingId="hasStateOptions1" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=stateOptions1, srcfield=state1]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasPropOptions1" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional attribute/property options</Description>
-			</Field>
-			
-			<Field type="menu" id="propOptions1" defaultValue="" visibleBindingId="hasPropOptions1" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=propOptions1, srcfield=property1]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			<!-- End future proofing -->		
+			</Field>			
 			
 			<Field id="value1" type="textfield" defaultValue="" visibleBindingId="hasStartValue1" visibleBindingValue="true">
 				<Label>Value:</Label>
@@ -196,20 +135,20 @@
 			
 			<Field type="menu" id="startYear1" defaultValue="2016" visibleBindingId="hasStartDate1" visibleBindingValue="true">
 				<Label>Year:</Label>
-				<List class="self" filter="#years#[index=startYear1, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startMonth1" defaultValue="05" visibleBindingId="hasStartDate1" visibleBindingValue="true">
 				<Label>Month:</Label>
-				<List class="self" filter="#months#[index=startMonth1, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startDay1" defaultValue="05" visibleBindingId="hasStartDate1" visibleBindingValue="true">
 				<Label>Day:</Label>
-				<List class="self" filter="#days#[index=startDay1, monthsrc=startMonth1, yearsrc=startYear1, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#startMonth1#startYear1" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartDow1" defaultValue="false" hidden="true">
@@ -219,8 +158,8 @@
 			
 			<Field type="menu" id="startDow1" defaultValue="0" visibleBindingId="hasStartDate1" visibleBindingValue="true">
 				<Label>Day of the week:</Label>
-				<List class="self" filter="#dows#[index=startDow1, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartTime1" defaultValue="false" hidden="true">
@@ -230,8 +169,8 @@
 			
 			<Field type="menu" id="startTime1" defaultValue="08:00" visibleBindingId="hasStartTime1" visibleBindingValue="true">
 				<Label>Time:</Label>
-				<List class="self" filter="#times#[index=startTime1, showany=true, shownow=true, chunks=12]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndValue1" defaultValue="false" hidden="true">
@@ -254,20 +193,20 @@
 			
 			<Field type="menu" id="endYear1" defaultValue="2016" visibleBindingId="hasEndDate1" visibleBindingValue="true">
 				<Label>End year:</Label>
-				<List class="self" filter="#years#[index=endYear1, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="endMonth1" defaultValue="02" visibleBindingId="hasEndDate1" visibleBindingValue="true">
 				<Label>End month:</Label>
-				<List class="self" filter="#months#[index=endMonth1, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="endDay1" defaultValue="15" visibleBindingId="hasEndDate1" visibleBindingValue="true">
 				<Label>End Day:</Label>
-				<List class="self" filter="#days#[index=endDay1, monthsrc=endMonth1, yearsrc=endYear1, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#endMonth1#endYear1" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndDow1" defaultValue="false" hidden="true">
@@ -277,8 +216,8 @@
 			
 			<Field type="menu" id="endDow1" defaultValue="6" visibleBindingId="hasEndDate1" visibleBindingValue="true">
 				<Label>End day of week:</Label>
-				<List class="self" filter="#dows#[index=endDow1, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndTime1" defaultValue="false" hidden="true">
@@ -288,10 +227,10 @@
 			
 			<Field type="menu" id="endTime1" defaultValue="10:00" visibleBindingId="hasEndTime1" visibleBindingValue="true">
 				<Label>End time:</Label>
-				<List class="self" filter="#times#[index=endTime1, showany=true, shownow=true, chunks=12]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
-															
+			
 			<!-- ***********       CONDITION 2      *********** -->
 			
 			<Field id="sep_condition2" type="separator" visibleBindingId="expandConditions2" visibleBindingValue="true"/>
@@ -299,55 +238,29 @@
 			<Field type="checkbox" id="expandConditions2" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
 				<Label> </Label>
 				<Description>Expand condition 2</Description>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>	
 			
 			<Field type="menu" id="condition2" defaultValue="" visibleBindingId="expandConditions2" visibleBindingValue="true">
 				<Label>Condition:</Label>
-				<List class="self" filter="#conditions_menu#[index=condition2]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasDevice2" defaultValue="false" hidden="true">
 				<Label> </Label>
-				<Description>Show the device field</Description>
+				<Description>Show the device and state fields</Description>
 			</Field>
 			
 			<Field type="menu" id="device2" defaultValue="" visibleBindingId="hasDevice2" visibleBindingValue="true" >
 				<Label>Device:</Label>
 				<List class="indigo.devices"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="checkbox" id="hasState2" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the state field</Description>
-			</Field>
-			
-			<Field type="menu" id="state2" defaultValue="" visibleBindingId="hasState2" visibleBindingValue="true">
+			<Field type="menu" id="state2" defaultValue="" visibleBindingId="hasDevice2" visibleBindingValue="true">
 				<Label>State:</Label>
-				<List class="self" filter="#devicestates#[index=state2, srcfield=device2, allowui=False]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasProp2" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the property field</Description>
-			</Field>
-			
-			<Field type="menu" id="property2" defaultValue="" visibleBindingId="hasProp2" visibleBindingValue="true">
-				<Label>Property:</Label>
-				<List class="self" filter="#devicevalues#[index=property2, srcfield=device2]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasField2" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the config props field</Description>
-			</Field>
-			
-			<Field type="menu" id="field2" defaultValue="" visibleBindingId="hasField2" visibleBindingValue="true">
-				<Label>Config fields:</Label>
-				<List class="self" filter="#devicefields#[index=field2, srcfield=device2, allowui=False]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="device2" method="getStatesForDevice" dynamicReload="true"/>
 			</Field>
 			
 			<Field type="checkbox" id="hasVariable2" defaultValue="false" hidden="true">
@@ -358,7 +271,7 @@
 			<Field type="menu" id="variable2" defaultValue="" visibleBindingId="hasVariable2" visibleBindingValue="true" >
 				<Label>Variable:</Label>
 				<List class="indigo.variables"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasPythonFormat2" defaultValue="false" hidden="true">
@@ -370,52 +283,17 @@
 				<Label>Python date format:</Label>
 			</Field>
 			
-			<Field type="menu" id="evaluation2" defaultValue="equal" visibleBindingId="condition2" visibleBindingValue="device,variable,datetime,dow,devstatedatetime,vardatetime,attributes,fields,devattribdatetime">
+			<Field type="menu" id="evaluation2" defaultValue="equal" visibleBindingId="condition2" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
 				<Label>Is:</Label>
-				<List class="self" filter="#conditions_operators#[index=evaluation2]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			
 			<Field type="checkbox" id="hasStartValue2" defaultValue="false" hidden="true">
 				<Label> </Label>
 				<Description>Show the start value</Description>
-			</Field>	
-			
-			<!-- Future proofing in case we want to incorporate options -->
-			<Field type="checkbox" id="hasFieldOptions2" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional options</Description>
-			</Field>
-			
-			<Field type="menu" id="fieldOptions2" defaultValue="" visibleBindingId="hasFieldOptions2" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#fieldoptions#[index=fieldOptions2, srcfield=field2]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasStateOptions2" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional state options</Description>
-			</Field>
-			
-			<Field type="menu" id="stateOptions2" defaultValue="" visibleBindingId="hasStateOptions2" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=stateOptions2, srcfield=state2]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasPropOptions2" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional attribute/property options</Description>
-			</Field>
-			
-			<Field type="menu" id="propOptions2" defaultValue="" visibleBindingId="hasPropOptions2" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=propOptions2, srcfield=property2]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			<!-- End future proofing -->		
+			</Field>			
 			
 			<Field id="value2" type="textfield" defaultValue="" visibleBindingId="hasStartValue2" visibleBindingValue="true">
 				<Label>Value:</Label>
@@ -426,22 +304,22 @@
 				<Description>Show the start date (month, day, year)</Description>
 			</Field>
 			
-			<Field type="menu" id="startYear2" defaultValue="2026" visibleBindingId="hasStartDate2" visibleBindingValue="true">
+			<Field type="menu" id="startYear2" defaultValue="2016" visibleBindingId="hasStartDate2" visibleBindingValue="true">
 				<Label>Year:</Label>
-				<List class="self" filter="#years#[index=startYear2, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startMonth2" defaultValue="05" visibleBindingId="hasStartDate2" visibleBindingValue="true">
 				<Label>Month:</Label>
-				<List class="self" filter="#months#[index=startMonth2, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startDay2" defaultValue="05" visibleBindingId="hasStartDate2" visibleBindingValue="true">
 				<Label>Day:</Label>
-				<List class="self" filter="#days#[index=startDay2, monthsrc=startMonth2, yearsrc=startYear2, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#startMonth1#startYear2" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartDow2" defaultValue="false" hidden="true">
@@ -451,8 +329,8 @@
 			
 			<Field type="menu" id="startDow2" defaultValue="0" visibleBindingId="hasStartDate2" visibleBindingValue="true">
 				<Label>Day of the week:</Label>
-				<List class="self" filter="#dows#[index=startDow2, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartTime2" defaultValue="false" hidden="true">
@@ -462,8 +340,8 @@
 			
 			<Field type="menu" id="startTime2" defaultValue="08:00" visibleBindingId="hasStartTime2" visibleBindingValue="true">
 				<Label>Time:</Label>
-				<List class="self" filter="#times#[index=startTime2, showany=true, shownow=true, chunks=22]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndValue2" defaultValue="false" hidden="true">
@@ -484,22 +362,22 @@
 				<Label>                                               ____________________________________________________</Label>
 			</Field>
 			
-			<Field type="menu" id="endYear2" defaultValue="2026" visibleBindingId="hasEndDate2" visibleBindingValue="true">
+			<Field type="menu" id="endYear2" defaultValue="2016" visibleBindingId="hasEndDate2" visibleBindingValue="true">
 				<Label>End year:</Label>
-				<List class="self" filter="#years#[index=endYear2, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="endMonth2" defaultValue="02" visibleBindingId="hasEndDate2" visibleBindingValue="true">
 				<Label>End month:</Label>
-				<List class="self" filter="#months#[index=endMonth2, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="menu" id="endDay2" defaultValue="25" visibleBindingId="hasEndDate2" visibleBindingValue="true">
+			<Field type="menu" id="endDay2" defaultValue="15" visibleBindingId="hasEndDate2" visibleBindingValue="true">
 				<Label>End Day:</Label>
-				<List class="self" filter="#days#[index=endDay2, monthsrc=endMonth2, yearsrc=endYear2, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#endMonth1#endYear2" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndDow2" defaultValue="false" hidden="true">
@@ -509,8 +387,8 @@
 			
 			<Field type="menu" id="endDow2" defaultValue="6" visibleBindingId="hasEndDate2" visibleBindingValue="true">
 				<Label>End day of week:</Label>
-				<List class="self" filter="#dows#[index=endDow2, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndTime2" defaultValue="false" hidden="true">
@@ -518,10 +396,10 @@
 				<Description>Show the end time</Description>
 			</Field>
 			
-			<Field type="menu" id="endTime2" defaultValue="20:00" visibleBindingId="hasEndTime2" visibleBindingValue="true">
+			<Field type="menu" id="endTime2" defaultValue="10:00" visibleBindingId="hasEndTime2" visibleBindingValue="true">
 				<Label>End time:</Label>
-				<List class="self" filter="#times#[index=endTime2, showany=true, shownow=true, chunks=22]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<!-- ***********       CONDITION 3      *********** -->
@@ -531,55 +409,29 @@
 			<Field type="checkbox" id="expandConditions3" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
 				<Label> </Label>
 				<Description>Expand condition 3</Description>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>	
 			
 			<Field type="menu" id="condition3" defaultValue="" visibleBindingId="expandConditions3" visibleBindingValue="true">
 				<Label>Condition:</Label>
-				<List class="self" filter="#conditions_menu#[index=condition3]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasDevice3" defaultValue="false" hidden="true">
 				<Label> </Label>
-				<Description>Show the device field</Description>
+				<Description>Show the device and state fields</Description>
 			</Field>
 			
 			<Field type="menu" id="device3" defaultValue="" visibleBindingId="hasDevice3" visibleBindingValue="true" >
 				<Label>Device:</Label>
 				<List class="indigo.devices"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="checkbox" id="hasState3" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the state field</Description>
-			</Field>
-			
-			<Field type="menu" id="state3" defaultValue="" visibleBindingId="hasState3" visibleBindingValue="true">
+			<Field type="menu" id="state3" defaultValue="" visibleBindingId="hasDevice3" visibleBindingValue="true">
 				<Label>State:</Label>
-				<List class="self" filter="#devicestates#[index=state3, srcfield=device3, allowui=False]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasProp3" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the property field</Description>
-			</Field>
-			
-			<Field type="menu" id="property3" defaultValue="" visibleBindingId="hasProp3" visibleBindingValue="true">
-				<Label>Property:</Label>
-				<List class="self" filter="#devicevalues#[index=property3, srcfield=device3]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasField3" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the config props field</Description>
-			</Field>
-			
-			<Field type="menu" id="field3" defaultValue="" visibleBindingId="hasField3" visibleBindingValue="true">
-				<Label>Config fields:</Label>
-				<List class="self" filter="#devicefields#[index=field3, srcfield=device3, allowui=False]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="device3" method="getStatesForDevice" dynamicReload="true"/>
 			</Field>
 			
 			<Field type="checkbox" id="hasVariable3" defaultValue="false" hidden="true">
@@ -590,7 +442,7 @@
 			<Field type="menu" id="variable3" defaultValue="" visibleBindingId="hasVariable3" visibleBindingValue="true" >
 				<Label>Variable:</Label>
 				<List class="indigo.variables"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasPythonFormat3" defaultValue="false" hidden="true">
@@ -602,52 +454,17 @@
 				<Label>Python date format:</Label>
 			</Field>
 			
-			<Field type="menu" id="evaluation3" defaultValue="equal" visibleBindingId="condition3" visibleBindingValue="device,variable,datetime,dow,devstatedatetime,vardatetime,attributes,fields,devattribdatetime">
+			<Field type="menu" id="evaluation3" defaultValue="equal" visibleBindingId="condition3" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
 				<Label>Is:</Label>
-				<List class="self" filter="#conditions_operators#[index=evaluation3]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			
 			<Field type="checkbox" id="hasStartValue3" defaultValue="false" hidden="true">
 				<Label> </Label>
 				<Description>Show the start value</Description>
-			</Field>	
-			
-			<!-- Future proofing in case we want to incorporate options -->
-			<Field type="checkbox" id="hasFieldOptions3" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional options</Description>
-			</Field>
-			
-			<Field type="menu" id="fieldOptions3" defaultValue="" visibleBindingId="hasFieldOptions3" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#fieldoptions#[index=fieldOptions3, srcfield=field3]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasStateOptions3" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional state options</Description>
-			</Field>
-			
-			<Field type="menu" id="stateOptions3" defaultValue="" visibleBindingId="hasStateOptions3" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=stateOptions3, srcfield=state3]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasPropOptions3" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional attribute/property options</Description>
-			</Field>
-			
-			<Field type="menu" id="propOptions3" defaultValue="" visibleBindingId="hasPropOptions3" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=propOptions3, srcfield=property3]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			<!-- End future proofing -->		
+			</Field>			
 			
 			<Field id="value3" type="textfield" defaultValue="" visibleBindingId="hasStartValue3" visibleBindingValue="true">
 				<Label>Value:</Label>
@@ -658,22 +475,22 @@
 				<Description>Show the start date (month, day, year)</Description>
 			</Field>
 			
-			<Field type="menu" id="startYear3" defaultValue="3036" visibleBindingId="hasStartDate3" visibleBindingValue="true">
+			<Field type="menu" id="startYear3" defaultValue="2016" visibleBindingId="hasStartDate3" visibleBindingValue="true">
 				<Label>Year:</Label>
-				<List class="self" filter="#years#[index=startYear3, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startMonth3" defaultValue="05" visibleBindingId="hasStartDate3" visibleBindingValue="true">
 				<Label>Month:</Label>
-				<List class="self" filter="#months#[index=startMonth3, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startDay3" defaultValue="05" visibleBindingId="hasStartDate3" visibleBindingValue="true">
 				<Label>Day:</Label>
-				<List class="self" filter="#days#[index=startDay3, monthsrc=startMonth3, yearsrc=startYear3, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#startMonth1#startYear3" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartDow3" defaultValue="false" hidden="true">
@@ -683,8 +500,8 @@
 			
 			<Field type="menu" id="startDow3" defaultValue="0" visibleBindingId="hasStartDate3" visibleBindingValue="true">
 				<Label>Day of the week:</Label>
-				<List class="self" filter="#dows#[index=startDow3, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartTime3" defaultValue="false" hidden="true">
@@ -694,8 +511,8 @@
 			
 			<Field type="menu" id="startTime3" defaultValue="08:00" visibleBindingId="hasStartTime3" visibleBindingValue="true">
 				<Label>Time:</Label>
-				<List class="self" filter="#times#[index=startTime3, showany=true, shownow=true, chunks=33]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndValue3" defaultValue="false" hidden="true">
@@ -716,22 +533,22 @@
 				<Label>                                               ____________________________________________________</Label>
 			</Field>
 			
-			<Field type="menu" id="endYear3" defaultValue="3036" visibleBindingId="hasEndDate3" visibleBindingValue="true">
+			<Field type="menu" id="endYear3" defaultValue="2016" visibleBindingId="hasEndDate3" visibleBindingValue="true">
 				<Label>End year:</Label>
-				<List class="self" filter="#years#[index=endYear3, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="endMonth3" defaultValue="03" visibleBindingId="hasEndDate3" visibleBindingValue="true">
 				<Label>End month:</Label>
-				<List class="self" filter="#months#[index=endMonth3, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="menu" id="endDay3" defaultValue="35" visibleBindingId="hasEndDate3" visibleBindingValue="true">
+			<Field type="menu" id="endDay3" defaultValue="15" visibleBindingId="hasEndDate3" visibleBindingValue="true">
 				<Label>End Day:</Label>
-				<List class="self" filter="#days#[index=endDay3, monthsrc=endMonth3, yearsrc=endYear3, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#endMonth1#endYear3" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndDow3" defaultValue="false" hidden="true">
@@ -741,8 +558,8 @@
 			
 			<Field type="menu" id="endDow3" defaultValue="6" visibleBindingId="hasEndDate3" visibleBindingValue="true">
 				<Label>End day of week:</Label>
-				<List class="self" filter="#dows#[index=endDow3, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndTime3" defaultValue="false" hidden="true">
@@ -750,10 +567,10 @@
 				<Description>Show the end time</Description>
 			</Field>
 			
-			<Field type="menu" id="endTime3" defaultValue="30:00" visibleBindingId="hasEndTime3" visibleBindingValue="true">
+			<Field type="menu" id="endTime3" defaultValue="10:00" visibleBindingId="hasEndTime3" visibleBindingValue="true">
 				<Label>End time:</Label>
-				<List class="self" filter="#times#[index=endTime3, showany=true, shownow=true, chunks=33]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<!-- ***********       CONDITION 4      *********** -->
@@ -763,55 +580,29 @@
 			<Field type="checkbox" id="expandConditions4" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
 				<Label> </Label>
 				<Description>Expand condition 4</Description>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>	
 			
 			<Field type="menu" id="condition4" defaultValue="" visibleBindingId="expandConditions4" visibleBindingValue="true">
 				<Label>Condition:</Label>
-				<List class="self" filter="#conditions_menu#[index=condition4]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasDevice4" defaultValue="false" hidden="true">
 				<Label> </Label>
-				<Description>Show the device field</Description>
+				<Description>Show the device and state fields</Description>
 			</Field>
 			
 			<Field type="menu" id="device4" defaultValue="" visibleBindingId="hasDevice4" visibleBindingValue="true" >
 				<Label>Device:</Label>
 				<List class="indigo.devices"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="checkbox" id="hasState4" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the state field</Description>
-			</Field>
-			
-			<Field type="menu" id="state4" defaultValue="" visibleBindingId="hasState4" visibleBindingValue="true">
+			<Field type="menu" id="state4" defaultValue="" visibleBindingId="hasDevice4" visibleBindingValue="true">
 				<Label>State:</Label>
-				<List class="self" filter="#devicestates#[index=state4, srcfield=device4, allowui=False]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasProp4" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the property field</Description>
-			</Field>
-			
-			<Field type="menu" id="property4" defaultValue="" visibleBindingId="hasProp4" visibleBindingValue="true">
-				<Label>Property:</Label>
-				<List class="self" filter="#devicevalues#[index=property4, srcfield=device4]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasField4" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the config props field</Description>
-			</Field>
-			
-			<Field type="menu" id="field4" defaultValue="" visibleBindingId="hasField4" visibleBindingValue="true">
-				<Label>Config fields:</Label>
-				<List class="self" filter="#devicefields#[index=field4, srcfield=device4, allowui=False]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="device4" method="getStatesForDevice" dynamicReload="true"/>
 			</Field>
 			
 			<Field type="checkbox" id="hasVariable4" defaultValue="false" hidden="true">
@@ -822,7 +613,7 @@
 			<Field type="menu" id="variable4" defaultValue="" visibleBindingId="hasVariable4" visibleBindingValue="true" >
 				<Label>Variable:</Label>
 				<List class="indigo.variables"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasPythonFormat4" defaultValue="false" hidden="true">
@@ -834,52 +625,17 @@
 				<Label>Python date format:</Label>
 			</Field>
 			
-			<Field type="menu" id="evaluation4" defaultValue="equal" visibleBindingId="condition4" visibleBindingValue="device,variable,datetime,dow,devstatedatetime,vardatetime,attributes,fields,devattribdatetime">
+			<Field type="menu" id="evaluation4" defaultValue="equal" visibleBindingId="condition4" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
 				<Label>Is:</Label>
-				<List class="self" filter="#conditions_operators#[index=evaluation4]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			
 			<Field type="checkbox" id="hasStartValue4" defaultValue="false" hidden="true">
 				<Label> </Label>
 				<Description>Show the start value</Description>
-			</Field>	
-			
-			<!-- Future proofing in case we want to incorporate options -->
-			<Field type="checkbox" id="hasFieldOptions4" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional options</Description>
-			</Field>
-			
-			<Field type="menu" id="fieldOptions4" defaultValue="" visibleBindingId="hasFieldOptions4" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#fieldoptions#[index=fieldOptions4, srcfield=field4]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasStateOptions4" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional state options</Description>
-			</Field>
-			
-			<Field type="menu" id="stateOptions4" defaultValue="" visibleBindingId="hasStateOptions4" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=stateOptions4, srcfield=state4]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasPropOptions4" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional attribute/property options</Description>
-			</Field>
-			
-			<Field type="menu" id="propOptions4" defaultValue="" visibleBindingId="hasPropOptions4" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=propOptions4, srcfield=property4]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			<!-- End future proofing -->		
+			</Field>			
 			
 			<Field id="value4" type="textfield" defaultValue="" visibleBindingId="hasStartValue4" visibleBindingValue="true">
 				<Label>Value:</Label>
@@ -890,22 +646,22 @@
 				<Description>Show the start date (month, day, year)</Description>
 			</Field>
 			
-			<Field type="menu" id="startYear4" defaultValue="4046" visibleBindingId="hasStartDate4" visibleBindingValue="true">
+			<Field type="menu" id="startYear4" defaultValue="2016" visibleBindingId="hasStartDate4" visibleBindingValue="true">
 				<Label>Year:</Label>
-				<List class="self" filter="#years#[index=startYear4, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startMonth4" defaultValue="05" visibleBindingId="hasStartDate4" visibleBindingValue="true">
 				<Label>Month:</Label>
-				<List class="self" filter="#months#[index=startMonth4, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startDay4" defaultValue="05" visibleBindingId="hasStartDate4" visibleBindingValue="true">
 				<Label>Day:</Label>
-				<List class="self" filter="#days#[index=startDay4, monthsrc=startMonth4, yearsrc=startYear4, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#startMonth1#startYear4" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartDow4" defaultValue="false" hidden="true">
@@ -915,8 +671,8 @@
 			
 			<Field type="menu" id="startDow4" defaultValue="0" visibleBindingId="hasStartDate4" visibleBindingValue="true">
 				<Label>Day of the week:</Label>
-				<List class="self" filter="#dows#[index=startDow4, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartTime4" defaultValue="false" hidden="true">
@@ -926,8 +682,8 @@
 			
 			<Field type="menu" id="startTime4" defaultValue="08:00" visibleBindingId="hasStartTime4" visibleBindingValue="true">
 				<Label>Time:</Label>
-				<List class="self" filter="#times#[index=startTime4, showany=true, shownow=true, chunks=44]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndValue4" defaultValue="false" hidden="true">
@@ -948,22 +704,22 @@
 				<Label>                                               ____________________________________________________</Label>
 			</Field>
 			
-			<Field type="menu" id="endYear4" defaultValue="4046" visibleBindingId="hasEndDate4" visibleBindingValue="true">
+			<Field type="menu" id="endYear4" defaultValue="2016" visibleBindingId="hasEndDate4" visibleBindingValue="true">
 				<Label>End year:</Label>
-				<List class="self" filter="#years#[index=endYear4, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="endMonth4" defaultValue="04" visibleBindingId="hasEndDate4" visibleBindingValue="true">
 				<Label>End month:</Label>
-				<List class="self" filter="#months#[index=endMonth4, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="menu" id="endDay4" defaultValue="45" visibleBindingId="hasEndDate4" visibleBindingValue="true">
+			<Field type="menu" id="endDay4" defaultValue="15" visibleBindingId="hasEndDate4" visibleBindingValue="true">
 				<Label>End Day:</Label>
-				<List class="self" filter="#days#[index=endDay4, monthsrc=endMonth4, yearsrc=endYear4, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#endMonth1#endYear4" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndDow4" defaultValue="false" hidden="true">
@@ -973,8 +729,8 @@
 			
 			<Field type="menu" id="endDow4" defaultValue="6" visibleBindingId="hasEndDate4" visibleBindingValue="true">
 				<Label>End day of week:</Label>
-				<List class="self" filter="#dows#[index=endDow4, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndTime4" defaultValue="false" hidden="true">
@@ -982,10 +738,10 @@
 				<Description>Show the end time</Description>
 			</Field>
 			
-			<Field type="menu" id="endTime4" defaultValue="40:00" visibleBindingId="hasEndTime4" visibleBindingValue="true">
+			<Field type="menu" id="endTime4" defaultValue="10:00" visibleBindingId="hasEndTime4" visibleBindingValue="true">
 				<Label>End time:</Label>
-				<List class="self" filter="#times#[index=endTime4, showany=true, shownow=true, chunks=44]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<!-- ***********       CONDITION 5      *********** -->
@@ -995,55 +751,29 @@
 			<Field type="checkbox" id="expandConditions5" defaultValue="false" visibleBindingId="conditions" visibleBindingValue="alltrue,allfalse,anytrue,anyfalse">
 				<Label> </Label>
 				<Description>Expand condition 5</Description>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>	
 			
 			<Field type="menu" id="condition5" defaultValue="" visibleBindingId="expandConditions5" visibleBindingValue="true">
 				<Label>Condition:</Label>
-				<List class="self" filter="#conditions_menu#[index=condition5]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="conditions" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasDevice5" defaultValue="false" hidden="true">
 				<Label> </Label>
-				<Description>Show the device field</Description>
+				<Description>Show the device and state fields</Description>
 			</Field>
 			
 			<Field type="menu" id="device5" defaultValue="" visibleBindingId="hasDevice5" visibleBindingValue="true" >
 				<Label>Device:</Label>
 				<List class="indigo.devices"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="checkbox" id="hasState5" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the state field</Description>
-			</Field>
-			
-			<Field type="menu" id="state5" defaultValue="" visibleBindingId="hasState5" visibleBindingValue="true">
+			<Field type="menu" id="state5" defaultValue="" visibleBindingId="hasDevice5" visibleBindingValue="true">
 				<Label>State:</Label>
-				<List class="self" filter="#devicestates#[index=state5, srcfield=device5, allowui=False]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasProp5" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the property field</Description>
-			</Field>
-			
-			<Field type="menu" id="property5" defaultValue="" visibleBindingId="hasProp5" visibleBindingValue="true">
-				<Label>Property:</Label>
-				<List class="self" filter="#devicevalues#[index=property5, srcfield=device5]" method="getCustomList" dynamicReload="true"/>
-			</Field>
-			
-			<Field type="checkbox" id="hasField5" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the config props field</Description>
-			</Field>
-			
-			<Field type="menu" id="field5" defaultValue="" visibleBindingId="hasField5" visibleBindingValue="true">
-				<Label>Config fields:</Label>
-				<List class="self" filter="#devicefields#[index=field5, srcfield=device5, allowui=False]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="device5" method="getStatesForDevice" dynamicReload="true"/>
 			</Field>
 			
 			<Field type="checkbox" id="hasVariable5" defaultValue="false" hidden="true">
@@ -1054,7 +784,7 @@
 			<Field type="menu" id="variable5" defaultValue="" visibleBindingId="hasVariable5" visibleBindingValue="true" >
 				<Label>Variable:</Label>
 				<List class="indigo.variables"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasPythonFormat5" defaultValue="false" hidden="true">
@@ -1066,52 +796,17 @@
 				<Label>Python date format:</Label>
 			</Field>
 			
-			<Field type="menu" id="evaluation5" defaultValue="equal" visibleBindingId="condition5" visibleBindingValue="device,variable,datetime,dow,devstatedatetime,vardatetime,attributes,fields,devattribdatetime">
+			<Field type="menu" id="evaluation5" defaultValue="equal" visibleBindingId="condition5" visibleBindingValue="device,variable,timeonly,dateonly,datetime,dow,devstatedateonly,devstatetimeonly,devstatedatetime,devstatedow,vardateonly,vartimeonly,vardatetime,vardow">
 				<Label>Is:</Label>
-				<List class="self" filter="#conditions_operators#[index=evaluation5]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="evals" method="getConditionsList" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			
 			<Field type="checkbox" id="hasStartValue5" defaultValue="false" hidden="true">
 				<Label> </Label>
 				<Description>Show the start value</Description>
-			</Field>	
-			
-			<!-- Future proofing in case we want to incorporate options -->
-			<Field type="checkbox" id="hasFieldOptions5" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional options</Description>
-			</Field>
-			
-			<Field type="menu" id="fieldOptions5" defaultValue="" visibleBindingId="hasFieldOptions5" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#fieldoptions#[index=fieldOptions5, srcfield=field5]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasStateOptions5" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional state options</Description>
-			</Field>
-			
-			<Field type="menu" id="stateOptions5" defaultValue="" visibleBindingId="hasStateOptions5" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=stateOptions5, srcfield=state5]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			
-			<Field type="checkbox" id="hasPropOptions5" defaultValue="false" hidden="true">
-				<Label> </Label>
-				<Description>Show the additional attribute/property options</Description>
-			</Field>
-			
-			<Field type="menu" id="propOptions5" defaultValue="" visibleBindingId="hasPropOptions5" visibleBindingValue="true">
-				<Label>Value:</Label>
-				<List class="self" filter="#stateoptions#[index=propOptions5, srcfield=property5]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>
-			<!-- End future proofing -->		
+			</Field>			
 			
 			<Field id="value5" type="textfield" defaultValue="" visibleBindingId="hasStartValue5" visibleBindingValue="true">
 				<Label>Value:</Label>
@@ -1122,22 +817,22 @@
 				<Description>Show the start date (month, day, year)</Description>
 			</Field>
 			
-			<Field type="menu" id="startYear5" defaultValue="5056" visibleBindingId="hasStartDate5" visibleBindingValue="true">
+			<Field type="menu" id="startYear5" defaultValue="2016" visibleBindingId="hasStartDate5" visibleBindingValue="true">
 				<Label>Year:</Label>
-				<List class="self" filter="#years#[index=startYear5, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startMonth5" defaultValue="05" visibleBindingId="hasStartDate5" visibleBindingValue="true">
 				<Label>Month:</Label>
-				<List class="self" filter="#months#[index=startMonth5, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="startDay5" defaultValue="05" visibleBindingId="hasStartDate5" visibleBindingValue="true">
 				<Label>Day:</Label>
-				<List class="self" filter="#days#[index=startDay5, monthsrc=startMonth5, yearsrc=startYear5, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#startMonth1#startYear5" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartDow5" defaultValue="false" hidden="true">
@@ -1147,8 +842,8 @@
 			
 			<Field type="menu" id="startDow5" defaultValue="0" visibleBindingId="hasStartDate5" visibleBindingValue="true">
 				<Label>Day of the week:</Label>
-				<List class="self" filter="#dows#[index=startDow5, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasStartTime5" defaultValue="false" hidden="true">
@@ -1158,8 +853,8 @@
 			
 			<Field type="menu" id="startTime5" defaultValue="08:00" visibleBindingId="hasStartTime5" visibleBindingValue="true">
 				<Label>Time:</Label>
-				<List class="self" filter="#times#[index=startTime5, showany=true, shownow=true, chunks=55]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndValue5" defaultValue="false" hidden="true">
@@ -1180,22 +875,22 @@
 				<Label>                                               ____________________________________________________</Label>
 			</Field>
 			
-			<Field type="menu" id="endYear5" defaultValue="5056" visibleBindingId="hasEndDate5" visibleBindingValue="true">
+			<Field type="menu" id="endYear5" defaultValue="2016" visibleBindingId="hasEndDate5" visibleBindingValue="true">
 				<Label>End year:</Label>
-				<List class="self" filter="#years#[index=endYear5, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="years" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="menu" id="endMonth5" defaultValue="05" visibleBindingId="hasEndDate5" visibleBindingValue="true">
 				<Label>End month:</Label>
-				<List class="self" filter="#months#[index=endMonth5, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="months" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
-			<Field type="menu" id="endDay5" defaultValue="55" visibleBindingId="hasEndDate5" visibleBindingValue="true">
+			<Field type="menu" id="endDay5" defaultValue="15" visibleBindingId="hasEndDate5" visibleBindingValue="true">
 				<Label>End Day:</Label>
-				<List class="self" filter="#days#[index=endDay5, monthsrc=endMonth5, yearsrc=endYear5, showany=true, shownext=true, showlast=true, showcurrent=true, showlastday=true, showrepeats=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="monthdays#endMonth1#endYear5" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndDow5" defaultValue="false" hidden="true">
@@ -1205,8 +900,8 @@
 			
 			<Field type="menu" id="endDow5" defaultValue="6" visibleBindingId="hasEndDate5" visibleBindingValue="true">
 				<Label>End day of week:</Label>
-				<List class="self" filter="#dows#[index=endDow5, showany=true, shownext=true, showlast=true, showcurrent=true]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
+				<List class="self" filter="dow" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
 			</Field>
 			
 			<Field type="checkbox" id="hasEndTime5" defaultValue="false" hidden="true">
@@ -1214,11 +909,11 @@
 				<Description>Show the end time</Description>
 			</Field>
 			
-			<Field type="menu" id="endTime5" defaultValue="50:00" visibleBindingId="hasEndTime5" visibleBindingValue="true">
+			<Field type="menu" id="endTime5" defaultValue="10:00" visibleBindingId="hasEndTime5" visibleBindingValue="true">
 				<Label>End time:</Label>
-				<List class="self" filter="#times#[index=endTime5, showany=true, shownow=true, chunks=55]" method="getCustomList" dynamicReload="true"/>
-				<CallbackMethod>formFieldChanged</CallbackMethod>
-			</Field>	
+				<List class="self" filter="times" method="getConditionDateValues" dynamicReload="true"/>
+				<CallbackMethod>onConditionsChange</CallbackMethod>
+			</Field>
 															
 						
 			
