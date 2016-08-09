@@ -51,6 +51,13 @@ class ui:
 		
 		try:	
 			if filter == "": return ret
+			
+			# If our target ID is zero see if we have a "uniqueIdentifier" field to take it's place (for action groups and
+			# other records where the targetId is never pass or where there can be multiple records under one Indigo ID)
+			if targetId == 0:
+				if ext.valueValid (valuesDict, "uniqueIdentifier"):
+					if valuesDict["uniqueIdentifier"] != "" and valuesDict["uniqueIdentifier"] != "0":
+						targetId = int(valuesDict["uniqueIdentifier"])
 	
 			method = re.findall("\#.*?\#", filter)
 			if len(method) == 0: return ret
@@ -60,6 +67,7 @@ class ui:
 
 			args = {}
 			index = ""
+			callback = ""
 	
 			if filter != "":
 				filter = filter.replace("[", "").replace("]","")
@@ -69,9 +77,15 @@ class ui:
 					args[valkey[0].lower().strip()] = valkey[1].strip()
 					if valkey[0].lower().strip() == "index":
 						index = valkey[1].strip()
+					if valkey[0].lower().strip() == "callback":
+						callback = valkey[1].strip()
+						
 
 			#indigo.server.log(unicode(index))
-			if index != "": args["index"] = index
+			#if index != "": args["index"] = index
+			
+			# Index can throw things off, make sure it's not in args
+			if "index" in args: del args["index"]
 
 			results = []
 			
@@ -92,7 +106,10 @@ class ui:
 								
 								# Return a single list item with the current value as the only option, this way we don't
 								# lose our value since it would no longer be a valid list item
-								if str(valuesDict[index]) != "":
+								if ext.valueValid (valuesDict, index) == False:
+									# Just in case the field doesn't exist
+									return ret
+								elif str(valuesDict[index]) != "":
 									return [(str(valuesDict[index]), "Condition collapsed, refreshing value")]
 								else:
 									return ret
@@ -106,13 +123,22 @@ class ui:
 			
 			self.logger.threaddebug ("Generating custom list '{0}' (filter: {1}), typeId of {2}, targetId of {3} and arguments: {4}".format(listType, filter, str(typeId), str(targetId), unicode(args)))
 			
+			# Callback
+			if listType.lower() == "plugin" and callback != "":
+				func = getattr(self.factory.plugin, callback)
+				results = func (args, valuesDict)
+			
 			# System
 			if listType.lower() == "indigofolders":	results = self._getIndigoFolders (args, valuesDict)
+			
+			# Miscellaneous
+			if listType.lower() == "numbers": results = self._getNumbers (args, valuesDict)
 		
 			# Conditions
 			if listType.lower() == "conditions_topmenu": results = self._getConditionsTopMenu (args, valuesDict)
 			if listType.lower() == "conditions_menu": results = self._getConditionsMenu (args, valuesDict)
 			if listType.lower() == "conditions_operators": results = self._getConditionsOperators (args, valuesDict)
+			if listType.lower() == "conditions_methods": results = self._getConditionsMethods (args, valuesDict)
 		
 			# Dates/Times
 			if listType.lower() == "years": results = self._getYears (args, valuesDict)
@@ -126,11 +152,14 @@ class ui:
 			if listType.lower() == "stateoptions": results = ret
 			if listType.lower() == "propoptions": results = ret
 			
-			# Actions
+			# Actions - providing an index for this (and thus caching it) may cause the list not to get updated properly
 			if listType.lower() == "actionoptionlist": results = self.factory.act.getActionOptionUIList (args, valuesDict)
 		
 			# Variables
 			if listType.lower() == "variableactions": results = self._getActionsForVariable (args, valuesDict)
+			
+			# Server
+			if listType.lower() == "serveractions": results = self._getActionsForServer (args, valuesDict)
 		
 			# Devices
 			if listType.lower() == "filtereddevices": results = self._getFilteredDeviceList (args, valuesDict)
@@ -152,6 +181,18 @@ class ui:
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
 			return ret	
+	
+	#
+	# Remove a target ID from the cache so it's not saved if we close and re-open the same device again
+	#
+	def flushCache (self, targetId):
+		try:
+			if targetId in self.listcache:
+				del self.listcache[targetId]
+				self.logger.threaddebug ("UI cache flushed for {0}".format(str(targetId)))
+				
+		except Exception as e:
+			self.logger.error (ext.getException(e))		
 	
 	#
 	# Cache a list so other routines can access it
@@ -225,25 +266,29 @@ class ui:
 			if field["index"] != index: 
 				#self.logger.info ("Index '{0}' does not match '{1}'".format(index, field["index"]))
 				return False
-			
+				
 			# See if all the args match
-			for argName, argValue in field["args"].iteritems():
-				if argName in args:
-					if str(argValue) in valuesDict:
-						value = valuesDict[str(argValue)]
-					else:
-						value = str(argValue)
+			for argName, argValue in args.iteritems():
+				# Make sure that this argument exists in our cache
+				if argName in field["args"]:
+					# See if the argValue is a lookup from valuesDict
+					if argValue != "" and argValue in valuesDict:
+						# This is a lookup field, the value is the value of the lookup
+						value = valuesDict[argValue]
 					
-					if value != str(argValue): 
-						#self.logger.info ("Argument {0} '{1}' is different than '{2}'".format(argName, argValue, valuesDict[argValue]))
-						return False # Something changed
+					else:
+						value = argValue
+						
+					# Now compare our value to the cached value
+					if unicode(value) != unicode(field["args"][argName]):
+						#self.logger.warn ("Value {0} differs from value {1} for argument {2}, not returning cache".format(unicode(value), unicode(args[argName]), argName)) 
+						return False # The argument values passed don't match the argument values stored
 					
 				else:
-					#self.logger.info ("Argument {0} is not present".format(argName))
+					self.logger.warn ("{0} is not in cached arguments")
 					return False # Argument difference
-					
-			# If we are here then nothing is different and we can return the previous results
-			return field["results"]
+				
+			return field["results"] # Everything is a match, return the cache
 			
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
@@ -271,12 +316,13 @@ class ui:
 			
 			currentValid = False
 			default = ""
-
+			
 			for result in field["results"]:
 				if str(result[0]) == str(currentVal): 
+					#indigo.server.log(str(result[0]) + " == " + str(currentVal))
 					#indigo.server.log("1", isError=True)
 					currentValid = True	
-			
+				
 				if default == "": default = result[0]
 
 			if currentValid: return currentVal
@@ -302,14 +348,35 @@ class ui:
 		try:
 			retList = []
 			
+			state = ""
+			excludeSelf = False
+						
+			# Only if it has a certain state
 			if ext.valueValid (args, "onlywith", True): 
 				state = args["onlywith"]
+				
+			# Exclude plugin devices
+			if ext.valueValid (args, "excludeself", True): 
+				if args["excludeself"].lower() == "true":
+					excludeSelf = True
 		
 			for dev in indigo.devices:
-				if ext.valueValid (dev.states, state):
+				isValid = True
+
+				# Check for filtered state	
+				if state != "":
+					isValid = False
+								
+					if ext.valueValid (dev.states, state):
+						isValide = True
+						
+				# Check for self filter
+				if excludeSelf and dev.pluginId == self.factory.plugin.pluginId: isValid = False
+				
+				if isValid:
 					retList.append ((str(dev.id), dev.name))	
 		
-			return retList
+			if len(retList) > 0: return retList
 	
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
@@ -692,6 +759,60 @@ class ui:
 			return ret
 
 	#
+	# Add condition methods to pop up options
+	#
+	def _getConditionsMethods (self, args, valuesDict):
+		ret = [("default", "^^ SELECT TO CONTINUE ^^")]
+	
+		try:
+		
+			#evalList = ["none|No conditions", "alltrue|All items are true", "anytrue|Any items are true", "allfalse|All items are false", "anyfalse|Any items are false"]
+			evalList = []
+		
+			conditionNum = 0
+			lastCondition = 0
+		
+			if ext.valueValid (args, "conditionNum", True): 
+				conditionNum = int(args["showfields"])
+				
+			for i in range (1, self.factory.cond.maxConditions + 1):
+				if ext.valueValid (valuesDict, "expandConditions" + str(i)): lastCondition = i
+		
+			retList = []
+			
+			retList.append (("default", "Default"))
+		
+			if conditionNum < lastCondition:
+				if conditionNum > 1:
+					retList.append (("and", "AND"))
+					retList.append (("or", "OR"))
+					retList = self.addLine (retList)
+			
+				retList.append (("(", "("))
+				retList = self.addLine (retList)
+			
+				if conditionNum > 1:
+					retList.append (("AND(", "AND ("))
+					retList.append ((")AND", ") AND"))
+					retList.append ((")AND(", ") AND ("))
+					retList = self.addLine (retList)
+			
+					retList.append (("OR(", "OR ("))
+					retList.append ((")OR", ") OR"))
+					retList.append ((")OR(", ") OR ("))
+					retList = self.addLine (retList)
+
+					retList.append ((")", ")"))
+			else:			
+				retList.append ((")", ")"))
+			
+			return retList
+	
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+			return ret
+
+	#
 	# Add condition to pop up options
 	#
 	def _getConditionsTopMenu (self, args, valuesDict):
@@ -839,6 +960,7 @@ class ui:
 		
 		try:		
 			if ext.valueValid (args, "srcfield", True) == False: return ret
+			if ext.valueValid (valuesDict, args["srcfield"], True) == False: return ret
 		
 			allowUi = False
 			if ext.valueValid (args, "allowui", True): 
@@ -917,6 +1039,7 @@ class ui:
 		
 		try:		
 			if ext.valueValid (args, "srcfield", True) == False: return ret
+			if valuesDict[args["srcfield"]] == "": return ret
 
 			allowUi = False
 			if ext.valueValid (args, "allowui", True): 
@@ -988,6 +1111,33 @@ class ui:
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
 			return ret	
+			
+	#
+	# Get all actions for servers
+	#
+	def _getActionsForServer(self, args, valuesDict):
+		ret = [("default", "No actions")]
+				
+		try:		
+			allowUi = False
+			if ext.valueValid (args, "allowui", True): 
+				if args["allowui"].lower() == "true": allowUi = True
+		
+			retList = []
+		
+			# This requires the plugcache for anything other than basic Indigo commands
+			if "plugcache" in dir(self.factory) and self.factory.plugcache is not None:
+				retList = self.factory.plugcache.getServerActionUIList (allowUi)
+				if len(retList) == 0: return [("-none-", "No Server Actions Found")]
+		
+				return retList
+			
+			else:
+				return ret
+
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+			return ret	
 	
 
 	#
@@ -1021,6 +1171,34 @@ class ui:
 			for f in func.folders:
 				option = (str(f.id), f.name)
 				retList.append(option)						
+					
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+			return ret
+		
+		return retList
+	
+	#
+	# Return list of folders for various Indigo items, returns devices folders by default
+	#
+	def _getNumbers (self, args, valuesDict):
+		ret = [("default", "No folders found")]
+	
+		try:
+			retList = []
+			
+			low = 0
+			high = 20
+		
+			if ext.valueValid (args, "low", True):
+				low = int(args["low"])
+				
+			if ext.valueValid (args, "high", True):
+				high = int(args["high"])
+			
+			for i in range (low, high + 1):
+				option = (str(i), str(i))
+				retList.append(option)		
 					
 		except Exception as e:
 			self.logger.error (ext.getException(e))	

@@ -199,7 +199,13 @@ class plugcache:
 			deviceTypeId = data[1]				
 			
 			if "xml" in plugInfo == False: return ret
-			if "actions" in plugInfo["xml"] == False: return ret
+			
+			# For some reason the line below doesn't return false properly, using IF ELSE instead
+			#if "actions" in plugInfo["xml"] == False: return ret
+			if "actions" in plugInfo["xml"]:
+				pass
+			else:
+				return ret
 			
 			for id, action in plugInfo["xml"]["actions"].iteritems():
 				isOk = True
@@ -252,6 +258,26 @@ class plugcache:
 		return self._cleanReturnList (ret)
 		
 	#
+	# Get a list of sesrver actions suitable for a list or menu UI field
+	#
+	def getServerActionUIList (self, showUIConfig = False):
+		ret = []
+		
+		try:
+			plugInfo = self.pluginCache["Indigo"]
+			deviceTypeId = "indigo.server"	
+			
+			if "xml" in plugInfo == False: return ret
+			if "actions" in plugInfo["xml"] == False: return ret
+			
+			ret = self._getActionUIList (plugInfo, deviceTypeId, showUIConfig, "indigo_")
+			
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+			
+		return self._cleanReturnList (ret)
+		
+	#
 	# Get a list of actions suitable for a list or menu UI field
 	#
 	def getActionUIList (self, obj, showUIConfig = False):
@@ -265,7 +291,12 @@ class plugcache:
 			deviceTypeId = data[1]				
 			
 			if "xml" in plugInfo == False: return ret
-			if "actions" in plugInfo["xml"] == False: return ret
+			
+			#if "actions" in plugInfo["xml"] == False: return ret
+			if "actions" in plugInfo["xml"]:
+				pass
+			else:
+				return ret
 			
 			if deviceTypeId[0:7] == "indigo.":
 				ret = self._getActionUIList (plugInfo, deviceTypeId, showUIConfig, "indigo_")
@@ -403,7 +434,10 @@ class plugcache:
 			plugInfo = None
 			deviceTypeId = ""
 			
-			self.logger.threaddebug ("Object '{0}' is typed as '{1}'".format(obj.name, unicode(type(obj))))
+			if type(obj) is str:
+				self.logger.threaddebug ("Object is typed as '{0}'".format(unicode(type(obj))))
+			else:
+				self.logger.threaddebug ("Object '{0}' is typed as '{1}'".format(obj.name, unicode(type(obj))))
 			
 			if type(obj) is indigo.Variable:
 				return self._resolveIndigoDevice (obj)
@@ -416,6 +450,11 @@ class plugcache:
 				
 			elif type(obj) is indigo.ActionGroup:
 				X = 1
+				
+			elif type(obj) is str:
+				if obj == "server":
+					plugInfo = self.pluginCache["Indigo"]
+					deviceTypeId = "indigo.server"
 				
 			else:
 				# It's a device
@@ -904,19 +943,19 @@ class plugcache:
 				fieldDict["separator"] = False
 				
 				try:		
-					fieldDict["id"] = self._getElementAttribute(field, u"id", filename=filename)
+					fieldDict["id"] = self._getElementAttribute(field, u"id", required=True, default="", errorIfNotAscii=False, filename=filename)
 				except:
 					fieldDict["id"] = ""
 					
 				try:		
-					fieldDict["ValueType"] = self._getElementAttribute(field, u"valueType", filename=filename)
+					fieldDict["ValueType"] = self._getElementAttribute(field, u"valueType", required=False, default="", errorIfNotAscii=False, filename=filename)
 				except:
 					fieldDict["ValueType"] = "string"
 					
 				try:		
-					fieldDict["Default"] = self._getElementAttribute(field, u"defaultValue", filename=filename)
+					fieldDict["Default"] = self._getElementAttribute(field, u"defaultValue", required=False, default="", errorIfNotAscii=False, filename=filename)
 				except:
-					fieldDict["Default"] = ""
+					fieldDict["Default"] = None
 					
 				fieldDict["type"] = fieldId = self._getElementAttribute(field, u"type", filename=filename)
 				if fieldDict["type"].lower() == "separator": fieldDict["separator"] = True

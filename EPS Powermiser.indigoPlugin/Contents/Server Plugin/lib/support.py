@@ -163,6 +163,7 @@ class support:
 				
 				variables = ""
 				devices = ""
+				actiongroups = ""
 				watchingIds = []
 				
 				for item in self.factory.cache.items:
@@ -188,10 +189,21 @@ class support:
 								watchingIds.append (watcher.id)
 								
 							cacheItem += self.factory.ui.debugLine ("   ID: {0}".format(watcher.id), "+")
-							if len(watcher.states) > 0: cacheItem += self.factory.ui.debugLine ("      States:", "+")
-							if len(watcher.properties) > 0: cacheItem += self.factory.ui.debugLine ("      Properties:", "+")
-							if len(watcher.attributes) > 0: cacheItem += self.factory.ui.debugLine ("      Attributes:", "+")
-
+							if len(watcher.states) > 0: 
+								cacheItem += self.factory.ui.debugLine ("      States:", "+")
+								for state in watcher.states:
+									cacheItem += self.factory.ui.debugLine ("         {0}".format(state), "+")	
+								
+							if len(watcher.properties) > 0: 
+								cacheItem += self.factory.ui.debugLine ("      Properties:", "+")
+								for prop in watcher.properties:
+									cacheItem += self.factory.ui.debugLine ("         {0}".format(prop), "+")	
+								
+							if len(watcher.attributes) > 0: 
+								cacheItem += self.factory.ui.debugLine ("      Attributes:", "+")
+								for attr in watcher.attributes:
+									cacheItem += self.factory.ui.debugLine ("         {0}".format(attr), "+")	
+								
 							if len(watcher.states) > 0 or len(watcher.properties) > 0 or len(watcher.attributes) > 0: cacheItem += self.factory.ui.debugLine (" ", "+")
 							
 						if len(item.watchedBy) > 0:
@@ -199,16 +211,27 @@ class support:
 							
 						for watcher in item.watchedBy:
 							cacheItem += self.factory.ui.debugLine ("   ID: {0}".format(watcher.id), "+")
-							if len(watcher.states) > 0: cacheItem += self.factory.ui.debugLine ("      States:", "+")
-							if len(watcher.properties) > 0: cacheItem += self.factory.ui.debugLine ("      Properties:", "+")
-							if len(watcher.attributes) > 0: cacheItem += self.factory.ui.debugLine ("      Attributes:", "+")
-
+							if len(watcher.states) > 0: 
+								cacheItem += self.factory.ui.debugLine ("      States:", "+")
+								for state in watcher.states:
+									cacheItem += self.factory.ui.debugLine ("         {0}".format(state), "+")	
+								
+							if len(watcher.properties) > 0: 
+								cacheItem += self.factory.ui.debugLine ("      Properties:", "+")
+								for prop in watcher.properties:
+									cacheItem += self.factory.ui.debugLine ("         {0}".format(prop), "+")	
+								
+							if len(watcher.attributes) > 0: 
+								cacheItem += self.factory.ui.debugLine ("      Attributes:", "+")
+								for attr in watcher.attributes:
+									cacheItem += self.factory.ui.debugLine ("         {0}".format(attr), "+")	
 							if len(watcher.states) > 0 or len(watcher.properties) > 0 or len(watcher.attributes) > 0: cacheItem += self.factory.ui.debugLine (" ", "+")
 												
 						cacheItem += self.factory.ui.debugLine (" ", "+")
 						
 						if item.itemType == "Device": devices += cacheItem
 						if item.itemType == "Variable": variables += cacheItem
+						if item.itemType == "ActionGroup": actiongroups += cacheItem
 						
 				ret += self.factory.ui.debugHeaderEx ("-")
 				ret += self.factory.ui.debugLine ("Devices", "-")
@@ -219,6 +242,11 @@ class support:
 				ret += self.factory.ui.debugLine ("Variables", "-")
 				ret += self.factory.ui.debugHeaderEx ("-")
 				ret += variables
+				
+				ret += self.factory.ui.debugHeaderEx ("-")
+				ret += self.factory.ui.debugLine ("Action Groups", "-")
+				ret += self.factory.ui.debugHeaderEx ("-")
+				ret += actiongroups
 				
 				if len(watchingIds) > 0:				
 					ret += self.factory.ui.debugHeaderEx ("-")

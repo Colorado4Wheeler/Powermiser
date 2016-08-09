@@ -47,7 +47,11 @@ class conditions:
 			isTrue = 0
 			isFalse = 0
 			
-			if ext.valueValid (propsDict, "conditions", True) == False: return False
+			if ext.valueValid (propsDict, "conditions", True) == False: 
+				self.logger.debug ("No conditions exist, defaulting to False")
+				return False
+			
+			
 			condition = propsDict["conditions"]
 			
 			self.logger.debug ("\tCondition is set to %s, testing condition(s)" % condition)

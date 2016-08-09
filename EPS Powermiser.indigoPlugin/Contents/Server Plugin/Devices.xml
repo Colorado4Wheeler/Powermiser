@@ -68,6 +68,12 @@
 				<Label> </Label>
 				<Description>Expand condition 1</Description>
 				<CallbackMethod>formFieldChanged</CallbackMethod>
+			</Field>
+			
+			<Field type="menu" id="conditionMethod1" defaultValue="" visibleBindingId="expandConditions1" visibleBindingValue="true">
+				<Label>Condition operation:</Label>
+				<List class="self" filter="#conditions_methods#[index=conditionMethod1, conditionNum=1]" method="getCustomList" dynamicReload="true"/>
+				<CallbackMethod>formFieldChanged</CallbackMethod>
 			</Field>	
 			
 			<Field type="menu" id="condition1" defaultValue="" visibleBindingId="expandConditions1" visibleBindingValue="true">
@@ -301,6 +307,12 @@
 				<Description>Expand condition 2</Description>
 				<CallbackMethod>formFieldChanged</CallbackMethod>
 			</Field>	
+			
+			<Field type="menu" id="conditionMethod2" defaultValue="" visibleBindingId="expandConditions2" visibleBindingValue="true">
+				<Label>Condition operation:</Label>
+				<List class="self" filter="#conditions_methods#[index=conditionMethod2, conditionNum=2]" method="getCustomList" dynamicReload="true"/>
+				<CallbackMethod>formFieldChanged</CallbackMethod>
+			</Field>
 			
 			<Field type="menu" id="condition2" defaultValue="" visibleBindingId="expandConditions2" visibleBindingValue="true">
 				<Label>Condition:</Label>

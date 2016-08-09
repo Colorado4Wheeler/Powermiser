@@ -14,6 +14,7 @@ import logging
 from lib.eps import eps
 from lib import ext
 from lib import dtutil
+from lib import iutil
 
 # Plugin libraries
 import ast
@@ -31,7 +32,7 @@ eps = eps(None)
 class Plugin(indigo.PluginBase):
 
 	# Define the plugin-specific things our engine needs to know
-	TVERSION	= "3.1.1"
+	TVERSION	= "3.2.1"
 	PLUGIN_LIBS = ["cache", "conditions"]
 	UPDATE_URL 	= ""#"http://forums.indigodomo.com/viewtopic.php?f=196&t=16343"
 	
@@ -264,6 +265,7 @@ class Plugin(indigo.PluginBase):
 	def actionControlDimmerRelay(self, action, dev): return eps.plug.actionControlDimmerRelay(action, dev)
 	
 	# UI Events
+	def getDeviceDisplayStateId(self, dev): return eps.plug.getDeviceDisplayStateId (dev)
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId): return eps.plug.validateDeviceConfigUi(valuesDict, typeId, devId)
 	def closedDeviceConfigUi(self, valuesDict, userCancelled, typeId, devId): return eps.plug.closedDeviceConfigUi(valuesDict, userCancelled, typeId, devId)		
 	
@@ -301,7 +303,10 @@ class Plugin(indigo.PluginBase):
 	################################################################################
 	
 	# Basic comm events
-	
+	def actionGroupCreated(self, actionGroup): eps.plug.actionGroupCreated(actionGroup)
+	def actionGroupUpdated (self, origActionGroup, newActionGroup): eps.plug.actionGroupUpdated (origActionGroup, newActionGroup)
+	def actionGroupDeleted(self, actionGroup): eps.plug.actionGroupDeleted(actionGroup)
+		
 	# UI
 	def validateActionConfigUi(self, valuesDict, typeId, actionId): return eps.plug.validateActionConfigUi(valuesDict, typeId, actionId)
 	def closedActionConfigUi(self, valuesDict, userCancelled, typeId, actionId): return eps.plug.closedActionConfigUi(valuesDict, userCancelled, typeId, actionId)
@@ -341,6 +346,7 @@ class Plugin(indigo.PluginBase):
 	# UI Events
 	def getCustomList (self, filter="", valuesDict=None, typeId="", targetId=0): return eps.ui.getCustomList (filter, valuesDict, typeId, targetId)
 	def formFieldChanged (self, valuesDict, typeId, devId): return eps.plug.formFieldChanged (valuesDict, typeId, devId)
+	
 	
 	
 	

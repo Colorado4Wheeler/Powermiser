@@ -10,7 +10,25 @@ import ext
 import dtutil
 
 class actions:	
-
+	# MAIN TERMS
+	FORMTERMS = ["Pass", "Fail"]
+	VALIDATION = "isActionConfig"
+	FIELDPREFIX = "if"
+	
+	# ACTION OBJECT TERMS
+	DEV = "device"
+	DEV_ACTION = "deviceAction"
+	VAR = "variable"
+	VAR_ACTION = "variableAction"
+	
+	# ACTION VALUE TERMS
+	OPT_GROUP = "optionGroup"
+	OPT_LABEL = "optionLabel"
+	STR_VAL = "strValue"
+	MENU_VAL = "menuValue"
+	LIST_VAL = "listValue"
+	CHECK_VAL = "checkValue"
+	
 	#
 	# Initialize the  class
 	#
@@ -18,36 +36,44 @@ class actions:
 		self.logger = logging.getLogger ("Plugin.actions")
 		self.factory = factory
 		self.maxFields = 10 # Max number of fields to populate for ConfigUI actions
-	
+
 	#
 	# Compile action options and run them
 	#
-	def runAction (self, propsDict, method = "Pass"):
+	def runAction (self, propsDict, method = None):
 		try:
+			if method is None: method = self.FORMTERMS[0]
+			
 			# Check that we have either a strValuePassOn or strValueFailOn, if we don't then this is either
 			# not an action or it's a pseudo action device that the plugin is handling one-off
-			if ext.valueValid (propsDict, "isActionConfig") == False:
-				self.logger.threaddebug ("The current device is not an action device, not running action")
+			if ext.valueValid (propsDict, self.VALIDATION) == False:
+				self.logger.threaddebug ("The current device is not an action device with {0}, not running action".format(self.VALIDATION))
 				return False
 				
 			# See if we are allowing multiple objects, if not default to device
 			objType = "device"
 		
 			# If we are allowing multiple objects make sure our selection is valid
-			if ext.valueValid (propsDict, "if" + method):
-				if ext.valueValid (propsDict, "if" + method, True):
-					objType = propsDict["if" + method]
+			if ext.valueValid (propsDict, self.FIELDPREFIX + method):
+				if ext.valueValid (propsDict, self.FIELDPREFIX + method, True):
+					objType = propsDict[self.FIELDPREFIX + method]
 				
 				else:
 					# It's blank or a line or something, just skip
 					self.logger.warn ("No method was selected for an action, it cannot be run")
 					return False
+					
+			self.logger.threaddebug ("Running action type '{0}' for a '{1}' condition".format(objType, method))
+			
+			if objType == "action":
+				if ext.valueValid (propsDict, "action" + method, True):
+					indigo.actionGroup.execute(int(propsDict["action" + method]))
 			
 			if objType == "device":
-				if ext.valueValid (propsDict, "device" + method, True):
+				if ext.valueValid (propsDict, self.DEV + method, True):
 					# No sense proceeding here unless they selected an action so we know what options to turn on
-					if ext.valueValid (propsDict, "deviceAction" + method, True):		
-						dev = indigo.devices[int(propsDict["device" + method])]
+					if ext.valueValid (propsDict, self.DEV_ACTION + method, True):		
+						dev = indigo.devices[int(propsDict[self.DEV + method])]
 						
 						# Get the action list from plugcache for this device
 						actions = self.factory.plugcache.getActions (dev)
@@ -58,7 +84,7 @@ class actions:
 						
 						fieldIdx = 1
 						for id, action in actions.iteritems():
-							if id == propsDict["deviceAction" + method]:
+							if id == propsDict[self.DEV_ACTION + method]:
 								actionItem = action
 								rawAction = id
 								
@@ -71,11 +97,32 @@ class actions:
 						
 						return self._executeAction (dev, rawAction, actionItem, args)
 						
+			if objType == "server":
+				# Get the action list from plugcache for this device
+				actions = self.factory.plugcache.getActions ("server")
+				args = {}
+				actionItem = None
+				rawAction = ""
+				
+				fieldIdx = 1
+				for id, action in actions.iteritems():
+					if id == propsDict["serverAction" + method]:
+						actionItem = action
+						rawAction = id
+						
+						if "ConfigUI" in action:
+							if "Fields" in action["ConfigUI"]:
+								for field in action["ConfigUI"]["Fields"]:
+									args[field["id"]] = self._getGroupFieldValue (propsDict, method, field["ValueType"], field["Default"], fieldIdx)
+									fieldIdx = fieldIdx + 1		
+									
+				return self._executeAction (None, rawAction, actionItem, args)	
+						
 			if objType == "variable":
-				if ext.valueValid (propsDict, "variable" + method, True):
+				if ext.valueValid (propsDict, self.VAR + method, True):
 					# No sense proceeding here unless they selected an action so we know what options to turn on
-					if ext.valueValid (propsDict, "variableAction" + method, True):		
-						var = indigo.variables[int(propsDict["variable" + method])]
+					if ext.valueValid (propsDict, self.VAR_ACTION + method, True):		
+						var = indigo.variables[int(propsDict[self.VAR + method])]
 						
 						# Get the action list from plugcache for this device
 						actions = self.factory.plugcache.getActions (var)
@@ -86,7 +133,7 @@ class actions:
 						
 						fieldIdx = 1
 						for id, action in actions.iteritems():
-							if id == propsDict["variableAction" + method]:
+							if id == propsDict[self.VAR_ACTION + method]:
 								actionItem = action
 								rawAction = id
 								
@@ -116,6 +163,15 @@ class actions:
 			#indigo.server.log(rawAction)
 			#indigo.server.log(unicode(args))
 			
+			# Check if we have some simple conversions to do before passing it on to Indigo or plugins
+			if rawAction == "indigo_setBinaryOutput" or rawAction == "indigo_setBinaryOutput_2":
+				args["index"] = args["index"] - 1 # Users will use 1 based but Indigo requires 0 based
+				args["value"] = False # We have to put up the value here
+				if rawAction == "indigo_setBinaryOutput": args["value"] = True
+				rawAction = "indigo_setBinaryOutput"
+				
+			##########################################################################################	
+				
 			# Check if we have a known custom command
 			if rawAction == "indigo_match":
 				# Custom dimmer command to match brightness
@@ -123,6 +179,58 @@ class actions:
 				
 				for devId in args["devices"]:
 					indigo.dimmer.setBrightness (int(devId), value=obj.states["brightnessLevel"], delay=args["delay"])
+					
+			elif rawAction == "indigo_sendEmailTo":		
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))	
+				indigo.server.sendEmailTo(args["to"], subject=args["subject"], body=args["body"])
+					
+			elif rawAction == "indigo_removeDelayedAll":		
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))	
+				indigo.server.removeAllDelayedActions()
+					
+			elif rawAction == "indigo_removeDelayedDevice":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				indigo.device.removeDelayedActions(args["device"])
+				
+			elif rawAction == "indigo_removeDelayedTrigger":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				indigo.trigger.removeDelayedActions(args["trigger"])
+				
+			elif rawAction == "indigo_removeDelayedSchedule":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))		
+				indigo.schedule.removeDelayedActions(args["schedule"])
+					
+			elif rawAction == "indigo_enableDevice":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				indigo.device.enable(args["device"], value=True)
+				
+			elif rawAction == "indigo_enableTrigger":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				indigo.trigger.enable(args["trigger"], value=True, duration=args["duration"], delay=args["delay"])
+				
+			elif rawAction == "indigo_enableSchedule":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))		
+				indigo.schedule.enable(args["schedule"], value=True, duration=args["duration"], delay=args["delay"])
+					
+			elif rawAction == "indigo_disableDevice":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				indigo.device.enable(args["device"], value=False)
+								
+			elif rawAction == "indigo_disableTrigger":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				indigo.trigger.enable(args["trigger"], value=False, duration=args["duration"], delay=args["delay"])
+				
+			elif rawAction == "indigo_disableSchedule":
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				indigo.schedule.enable(args["schedule"], value=False, duration=args["duration"], delay=args["delay"])
+					
+			elif rawAction == "indigo_setBinaryOutput_3":
+				# Turn off all binary outputs
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				dev = indigo.devices[obj.id]
+				
+				for i in range (0, dev.binaryInputCount):
+					indigo.iodevice.setBinaryOutput(dev.id, index=i, value=False)
 					
 			elif rawAction == "indigo_insertTimeStamp":
 				# Insert pre-formatted timestamp into variable
@@ -133,6 +241,14 @@ class actions:
 				# Insert custom formatted timestamp into variable
 				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
 				indigo.variable.updateValue(obj.id, value=indigo.server.getTime().strftime(args["format"]))
+				
+			elif rawAction == "indigo_setVarToVar":
+				# Insert custom formatted timestamp into variable
+				self.logger.threaddebug ("Executing custom command {0} using arguments {1}".format(rawAction, unicode(args)))
+				var = indigo.variables[obj.id]
+				copyVar = indigo.variables[args["variable"]]
+				
+				indigo.variable.updateValue(obj.id, value=copyVar.value)
 				
 			elif rawAction == "indigo_setVarToVar":
 				# Insert custom formatted timestamp into variable
@@ -255,20 +371,23 @@ class actions:
 		ret = ""
 		
 		try:
-			if ext.valueValid (propsDict, "optionGroup" + method + str(index), True):
-				if propsDict["optionGroup" + method + str(index)] == "textfield":
-					ret = propsDict["strValue" + method + str(index)]
-					
-				elif propsDict["optionGroup" + method + str(index)] == "menu":
-					ret = propsDict["menuValue" + method + str(index)]
-					
-				elif propsDict["optionGroup" + method + str(index)] == "list":
-					ret = propsDict["listValue" + method + str(index)]
-					
-				elif propsDict["optionGroup" + method + str(index)] == "checkbox":
-					ret = propsDict["checkValue" + method + str(index)]
+			if ext.valueValid (propsDict, self.OPT_GROUP + method + str(index), True):
+				# In case the plugin is hiding a valid field, unhide it here
+				propsDict[self.OPT_GROUP + method + str(index)] = self.toggleGroupVisibility (propsDict[self.OPT_GROUP + method + str(index)], True)
 				
-				if ret is None or ret == "": ret = default
+				if propsDict[self.OPT_GROUP + method + str(index)] == "textfield":
+					ret = propsDict[self.STR_VAL + method + str(index)]
+					
+				elif propsDict[self.OPT_GROUP + method + str(index)] == "menu":
+					ret = propsDict[self.MENU_VAL + method + str(index)]
+					
+				elif propsDict[self.OPT_GROUP + method + str(index)] == "list":
+					ret = propsDict[self.LIST_VAL + method + str(index)]
+					
+				elif propsDict[self.OPT_GROUP + method + str(index)] == "checkbox":
+					ret = propsDict[self.CHECK_VAL + method + str(index)]
+				
+				if ret is None or ret == "" and default is not None: ret = default
 				
 				if ret != "":
 					if type == "integer": 
@@ -310,34 +429,7 @@ class actions:
 			self.logger.error (ext.getException(e))	
 			
 		return ret
-		
-	#
-	# Get the option value for the provided key value
-	#
-	def _getOptionValue (self, propsDict, method, keyValue, isAction = False):
-		ret = keyValue # failsafe
-		
-		try:
-			fieldValue = ""
-			
-			if keyValue.lower() == "id": 
-				if isAction == False:
-					if ext.valueValid (propsDict, "device" + method, True):
-						return int(propsDict["device" + method])
-					else:
-						return 0
-			
-			if keyValue.lower() == "intvalue": 
-				if ext.valueValid (propsDict, "intValue" + method, True):
-					return int(propsDict["intValue" + method])
-				else:
-					return 0
-		
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-						
-		return ret
-		
+				
 	#
 	# Execute an action
 	#
@@ -414,29 +506,70 @@ class actions:
 		return True
 		
 	#
+	# Utility to toggle the visibility of a field so that the field is still considered active, just not displayed
+	#
+	def toggleGroupVisibility (self, fieldValue, unhide = False):
+		try:
+			if fieldValue == "hidden": return "hidden"
+			
+			if unhide == False:
+				# In case we get the already hidden value
+				if fieldValue == "invtxt": return fieldValue
+				if fieldValue == "invmnu": return fieldValue
+				if fieldValue == "invlst": return fieldValue
+				if fieldValue == "invchk": return fieldValue
+				
+				# Return hidden value
+				if fieldValue == "textfield": return "invtxt"
+				if fieldValue == "menu": return "invmnu"
+				if fieldValue == "list": return "invlst"
+				if fieldValue == "checkbox": return "invchk"
+				
+			else:
+				# In case we get the already unhidden value
+				# In case we get the already hidden value
+				if fieldValue == "textfield": return fieldValue
+				if fieldValue == "menu": return fieldValue
+				if fieldValue == "list": return fieldValue
+				if fieldValue == "checkbox": return fieldValue
+				
+				# Return unhidden value
+				if fieldValue == "invtxt": return "textfield"
+				if fieldValue == "invmnu": return "menu"
+				if fieldValue == "invlst": return "list"
+				if fieldValue == "invchk": return "checkbox"
+				
+			# If we got here then there is an unknown option
+			self.logger.warn ("Unable to change a group UI value {0}, this is could be critical depending on the plugin".format(fieldValue))
+		
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+		
+	#
 	# Set up any UI defaults that we need
 	#
 	def setUIDefaults (self, propsDict, defaultCondition = "disabled", defaultState = "onOffState"):
 		try:
 			# Check that we have either a strValuePassOn or strValueFailOn, if we don't then this is either
 			# not an action or it's a pseudo action device that the plugin is handling one-off
-			if ext.valueValid (propsDict, "isActionConfig") == False and ext.valueValid (propsDict, "strValueFailOn") == False:
+			if ext.valueValid (propsDict, self.VALIDATION) == False:
 				self.logger.threaddebug ("The current device is not an action device, not setting defaults")
 				return propsDict
 				
-			for i in range (0, 2):
-				method = "Pass"
-				if i == 1: method = "Fail"
+			for i in range (0, len(self.FORMTERMS)):
+				method = self.FORMTERMS[i]
 				
-				if ext.valueValid (propsDict, "optionLabel" + method + "1") == False: continue # may not have pass or may not have fail
+				if ext.valueValid (propsDict, self.OPT_LABEL + method + "1") == False: 
+					self.logger.threaddebug ("{0} doesn't seem to apply to this device, skipping defaults".format(method))
+					continue # may not have pass or may not have fail
 				
 				# See if we are allowing multiple objects, if not default to device
 				objType = "device"
 			
 				# If we are allowing multiple objects make sure our selection is valid
-				if ext.valueValid (propsDict, "if" + method):
-					if ext.valueValid (propsDict, "if" + method, True):
-						objType = propsDict["if" + method]
+				if ext.valueValid (propsDict, self.FIELDPREFIX + method):
+					if ext.valueValid (propsDict, self.FIELDPREFIX + method, True):
+						objType = propsDict[self.FIELDPREFIX + method]
 					
 					else:
 						# It's blank or a line or something, just skip
@@ -445,70 +578,83 @@ class actions:
 				# Assume no fields unless we find some
 				maxFormFields = 0
 				for j in range (1, self.maxFields): 
-					if ext.valueValid (propsDict, "optionGroup" + method + str(j)):
-						propsDict["optionGroup" + method + str(j)] = "hidden" 
+					if ext.valueValid (propsDict, self.OPT_GROUP + method + str(j)):
+						propsDict[self.OPT_GROUP + method + str(j)] = "hidden" 
 						maxFormFields = maxFormFields + 1
-						
+				
 				# Assume this action can be run
-				propsDict["showWarning"] = False
-				propsDict["showFieldWarning"] = False
+				propsDict["showWarning" + method] = False
+				propsDict["showFieldWarning" + method] = False
 				
-				
-					
 				if objType == "variable":	
-					if ext.valueValid (propsDict, "variable" + method, True):
+					if ext.valueValid (propsDict, self.VAR + method, True):
 						# No sense proceeding here unless they selected an action so we know what options to turn on
-						if ext.valueValid (propsDict, "variableAction" + method, True):	
-							var = indigo.variables[int(propsDict["variable" + method])]
+						if ext.valueValid (propsDict, self.VAR_ACTION + method, True):	
+							var = indigo.variables[int(propsDict[self.VAR + method])]
 				
 							# Get the action list from plugcache for this device
 							actions = self.factory.plugcache.getActions (var)
 							fieldIdx = 1
 							for id, action in actions.iteritems():
-								if id == propsDict["variableAction" + method]:
+								if id == propsDict[self.VAR_ACTION + method]:
 									if "ConfigUI" in action:
 										if "Fields" in action["ConfigUI"]:
 											# First make sure we have enough fields to support the action
-											if len(action["ConfigUI"]["Fields"]) > maxFormFields: propsDict["showFieldWarning"] = True
+											if len(action["ConfigUI"]["Fields"]) > maxFormFields: propsDict["showFieldWarning" + method] = True
 											
 											for field in action["ConfigUI"]["Fields"]:
 												propsDict = self._addFieldToUI (propsDict, var, action, field, method, fieldIdx)
 												fieldIdx = fieldIdx + 1
+												
+				elif objType == "server":
+					actions = self.factory.plugcache.getActions ("server")
+					fieldIdx = 1
+					for id, action in actions.iteritems():
+						if id == propsDict["serverAction" + method]:
+							if "ConfigUI" in action:
+								if "Fields" in action["ConfigUI"]:
+									# First make sure we have enough fields to support the action
+									if len(action["ConfigUI"]["Fields"]) > maxFormFields: propsDict["showFieldWarning" + method] = True
+								
+									for field in action["ConfigUI"]["Fields"]:
+										propsDict = self._addFieldToUI (propsDict, None, action, field, method, fieldIdx)
+										fieldIdx = fieldIdx + 1
 						
 				elif objType == "device":
-					if ext.valueValid (propsDict, "device" + method, True):
+					if ext.valueValid (propsDict, self.DEV + method, True):
 						# No sense proceeding here unless they selected an action so we know what options to turn on
-						if ext.valueValid (propsDict, "deviceAction" + method, True):	
-							dev = indigo.devices[int(propsDict["device" + method])]
-				
+						if ext.valueValid (propsDict, self.DEV_ACTION + method, True):								
+							dev = indigo.devices[int(propsDict[self.DEV + method])]
+
 							# Get the action list from plugcache for this device
 							actions = self.factory.plugcache.getActions (dev)
 							fieldIdx = 1
 							for id, action in actions.iteritems():
-								if id == propsDict["deviceAction" + method]:
+								if id == propsDict[self.DEV_ACTION + method]:
 									if "ConfigUI" in action:
 										if "Fields" in action["ConfigUI"]:
 											# First make sure we have enough fields to support the action
-											if len(action["ConfigUI"]["Fields"]) > maxFormFields: propsDict["showFieldWarning"] = True
+											if len(action["ConfigUI"]["Fields"]) > maxFormFields: propsDict["showFieldWarning" + method] = True
 											
 											for field in action["ConfigUI"]["Fields"]:
 												propsDict = self._addFieldToUI (propsDict, dev, action, field, method, fieldIdx)
 												fieldIdx = fieldIdx + 1
-										
+									
 							# In case our actions caused the developer warning, turn off all field options
-							if propsDict["showWarning"] or propsDict["showFieldWarning"]:
+							if propsDict["showWarning" + method] or propsDict["showFieldWarning" + method]:
 								for j in range (1, self.maxFields): 
-									if ext.valueValid (propsDict, "optionGroup" + method + str(j)):
-										propsDict["optionGroup" + method + str(j)] = "hidden" 
+									if ext.valueValid (propsDict, self.OPT_GROUP + method + str(j)):
+										propsDict[self.OPT_GROUP + method + str(j)] = "hidden" 
 										
 							# In case we got a developer warning make sure the field warning is off
-							if propsDict["showWarning"]: propsDict["showFieldWarning"] = False
+							if propsDict["showWarning" + method]: propsDict["showFieldWarning" + method] = False
 										
 							
 		
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
-			
+		
+		#indigo.server.log(unicode(propsDict))
 		return propsDict
 		
 	#
@@ -516,7 +662,8 @@ class actions:
 	#
 	def _addFieldToUI (self, propsDict, obj, action, field, method, fieldIdx):
 		try:
-			if ext.valueValid (propsDict, "optionGroup" + method + str(fieldIdx)):
+			#indigo.server.log(unicode(field))
+			if ext.valueValid (propsDict, self.OPT_GROUP + method + str(fieldIdx)):
 				# See if this is a self callback, in which case we need to disable the action
 				if len(field["List"]) > 0:
 					for listItem in field["List"]:
@@ -545,12 +692,12 @@ class actions:
 				if field["hidden"]: return propsDict # never show hidden fields
 				
 				if field["Label"] != "":
-					propsDict["optionLabel" + method + str(fieldIdx)] = field["Label"]
+					propsDict[self.OPT_LABEL + method + str(fieldIdx)] = field["Label"]
 				else:
-					propsDict["optionLabel" + method + str(fieldIdx)] = field["Description"]
+					propsDict[self.OPT_LABEL + method + str(fieldIdx)] = field["Description"]
 			
-				propsDict["optionGroup" + method + str(fieldIdx)] = field["type"]
-			
+				propsDict[self.OPT_GROUP + method + str(fieldIdx)] = field["type"]
+							
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
 			
@@ -570,14 +717,19 @@ class actions:
 				method = args["method"]
 				
 				objType = "device"
-				if ext.valueValid (valuesDict, "if" + method, True):
-					if valuesDict["if" + method] == "variable": objType = "variable"
+				if ext.valueValid (valuesDict, self.FIELDPREFIX + method, True):
+					if valuesDict[self.FIELDPREFIX + method] == "variable": objType = "variable"
+					if valuesDict[self.FIELDPREFIX + method] == "server": objType = "server"
 				
 				# In order to populate we have to have a device and an action
-				if ext.valueValid (valuesDict, objType + method, True):
+				if ext.valueValid (valuesDict, objType + method, True) or objType == "server":
 					if objType == "device": obj = indigo.devices[int(valuesDict[objType + method])]
 					if objType == "variable": obj = indigo.variables[int(valuesDict[objType + method])]
+					if objType == "server": obj = "server"
+
 					listData = self._getActionOptionUIList (obj, objType, valuesDict, method)
+					
+					#indigo.server.log(unicode(listData))
 					
 					listIdx = 1
 					for listItem in listData:
@@ -600,6 +752,16 @@ class actions:
 								
 						elif listItem["class"] == "indigo.dimmer":
 							for d in indigo.devices.iter("indigo.dimmer"):
+								option = (d.id, d.name)
+								retList.append (option)
+								
+						elif listItem["class"] == "indigo.triggers":
+							for d in indigo.triggers:
+								option = (d.id, d.name)
+								retList.append (option)
+								
+						elif listItem["class"] == "indigo.schedules":
+							for d in indigo.schedules:
 								option = (d.id, d.name)
 								retList.append (option)
 								
@@ -637,7 +799,10 @@ class actions:
 	def _getActionOptionUIList (self, obj, objType, valuesDict, method):
 		try:
 			actions = self.factory.plugcache.getActions (obj)
-					
+			
+			#indigo.server.log(objType + "Action" + method)
+			#indigo.server.log(valuesDict[objType + "Action" + method])
+			
 			for id, action in actions.iteritems():
 				if id == valuesDict[objType + "Action" + method]:
 					if "ConfigUI" in action:
@@ -661,22 +826,21 @@ class actions:
 		try:
 			# Check that we have either a strValuePassOn or strValueFailOn, if we don't then this is either
 			# not an action or it's a pseudo action device that the plugin is handling one-off
-			if ext.valueValid (valuesDict, "isActionConfig") == False:
+			if ext.valueValid (valuesDict, self.VALIDATION) == False:
 				self.logger.threaddebug ("The current device is not an action device, not validating actions")
 				return (True, valuesDict, errorDict)
 				
 			# Make sure no -line- items are selected
-			for i in range (0, 1):
-				method = "Pass"
-				if i == 1: method = "Fail"
+			for i in range (0, len(self.FORMTERMS)):
+				method = self.FORMTERMS[i]
 				
-				if ext.valueValid (valuesDict, "optionLabel" + method + "1") == False: continue # may not have pass or may not have fail
+				if ext.valueValid (valuesDict, self.OPT_LABEL + method + "1") == False: continue # may not have pass or may not have fail
 				
 				for j in range (1, self.maxFields): 
-					if ext.valueValid (valuesDict, "menuValue" + method + str(j)):
-						if valuesDict["menuValue" + method + str(j)] == "-line-":
+					if ext.valueValid (valuesDict, self.MENU_VAL + method + str(j)):
+						if valuesDict[self.MENU_VAL + method + str(j)] == "-line-":
 							msg += "Field {0} has a line selected.  ".format(str(j))
-							errorDict["menuValue" + method + str(j)] = "Invalid selection"
+							errorDict[self.MENU_VAL + method + str(j)] = "Invalid selection"
 							
 				
 			if msg != "":

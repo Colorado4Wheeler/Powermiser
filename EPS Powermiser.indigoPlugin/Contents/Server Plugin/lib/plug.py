@@ -6,8 +6,13 @@
 import indigo
 import logging
 import sys
+import random # for uniqueIdentifier
+import datetime
+from datetime import date, timedelta
+import string
 
 import ext
+import dtutil
 
 # ENUMS
 NOTHING = 0
@@ -17,6 +22,9 @@ AFTER = 2
 class plug:	
 	isSubscribedVariables = False
 	isSubscribedDevices = False
+	isSubscribedActionGroups = False
+	
+	lastDeviceLoaded = True # Initialize as the plugin starting up
 
 	#
 	# Initialize the  class
@@ -33,6 +41,7 @@ class plug:
 			for change in changes:
 				if change.lower() == "variables": self.isSubscribedVariables = True
 				if change.lower() == "devices": self.isSubscribedDevices = True
+				if change.lower() == "actiongroups": self.isSubscribedActionGroups = True
 				
 				f = getattr(indigo, change.lower())
 				f.subscribeToChanges()
@@ -99,6 +108,35 @@ class plug:
 			self.logger.error (ext.getException(e))	
 			return retval
 			
+	#
+	# Check to see if we have finished our loading
+	#
+	def isFinishedLoading (self):
+		try:
+			if self.lastDeviceLoaded:
+				try:
+					lastLoad = datetime.datetime.strptime (self.lastDeviceLoaded, "%Y-%m-%d %H:%M:%S")
+				except:
+					return False
+					
+				diff = dtutil.dateDiff ("seconds", indigo.server.getTime(), lastLoad)
+				if diff > 3:
+					self.lastDeviceLoaded = False
+					self.logger.info (self.factory.plugin.pluginDisplayName + " is loaded and ready to use")
+					return True
+				else:
+					return False
+				
+			else:
+				return True
+		
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+			return False
+			
+		return False
+		
+			
 	################################################################################
 	# PLUGIN ROUTINES
 	################################################################################	
@@ -107,6 +145,8 @@ class plug:
 	def startup (self): 
 		try:
 			self.logger.threaddebug ("Plugin '{0}' is starting".format(self.factory.plugin.pluginDisplayName))
+			
+			self._callBack (NOTHING, [], "pluginUpgrade")
 			
 			self._callBack (BEFORE, [])	
 			
@@ -200,6 +240,8 @@ class plug:
 				
 				self._callBack (AFTER, [])
 				
+				self.isFinishedLoading() # Passive if we are ready, calculation if we are not - lightweight
+								
 				self.factory.plugin.sleep(1)
 				
 				
@@ -215,6 +257,20 @@ class plug:
 	# DEVICE COMMUNICATION
 	################################################################################			
 	
+	# Call that Indigo makes to change the state display ID on the fly (Indigo)
+	def getDeviceDisplayStateId(self, dev):
+		try:
+			ret = self._callBack (BEFORE, [dev])
+			if ret is not None and ret != "": return ret
+			
+			ret = self._callBack (AFTER, [dev])
+			if ret is not None and ret != "": return ret
+			
+			return self.factory.plugin.devicesTypeDict[dev.deviceTypeId][u'DisplayStateId']
+		
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+	
 	# Device starts communication (Indigo)
 	def deviceStartComm (self, dev):
 		try:
@@ -228,10 +284,17 @@ class plug:
 				if ext.valueValid (dev.states, "lastreset", True) == False: dev.updateStateOnServer("lastreset", indigo.server.getTime().strftime("%Y-%m-%d"))
 			
 			self.addPluginDeviceToCache (dev)
-						
+			
+			# If the name has "copy" as the last word in the name, check if this might have been copied from another device,
+			# but this can only happen after we are already up and running
+			#i = string.find (dev.name, "copy")
+			#if i > -1:
+			#	if self.isFinishedLoading():
+			#		indigo.server.log("copy")
+			
 			self._callBack (AFTER, [dev])
 			
-			#indigo.server.log(unicode(dev))
+			if self.lastDeviceLoaded: self.lastDeviceLoaded = indigo.server.getTime().strftime("%Y-%m-%d %H:%M:%S")
 			
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
@@ -275,6 +338,11 @@ class plug:
 				if watcher is not None and len(watcher) > 0:
 					self.factory.cache.addWatchedVariable (dev, watcher)
 					
+				# If the plugin wants to know when an action group is run
+				watcher = self._callBack (NOTHING, [dev], "onWatchedActionGroupRequest")
+				if watcher is not None and len(watcher) > 0:
+					self.factory.cache.addWatchedActionGroup (dev, watcher)
+					
 			self._callBack (AFTER, [dev])
 		
 		except Exception as e:
@@ -297,6 +365,11 @@ class plug:
 	# Device updated (Indigo)
 	def deviceUpdated (self, origDev, newDev):
 		try:
+			if self.isFinishedLoading():
+				pass
+			else:
+				return
+			
 			if newDev.pluginId == self.factory.plugin.pluginId:
 				if len(origDev.pluginProps) > 0: 
 					self.pluginDeviceUpdated (origDev, newDev)
@@ -445,12 +518,27 @@ class plug:
 	# Plugin device deleted (Indigo)
 	def deviceDeleted(self, dev):
 		try:
-			self.logger.threaddebug ("Plugin device '{0}' deleted".format(dev.name))
+			self.logger.threaddebug ("Device '{0}' deleted".format(dev.name))
 			
 			self._callBack (BEFORE, [dev])
 			
 			if "cache" in dir(self.factory):
 				self.factory.cache.removeDevice (dev)	
+				
+			if dev.pluginId == self.factory.plugin.pluginId:
+				self.pluginDeviceDeleted (dev)
+			
+			self._callBack (AFTER, [dev])
+		
+		except Exception as e:
+			self.logger.error (ext.getException(e))		
+			
+	# Plugin device deleted (Custom)
+	def pluginDeviceDeleted (self, dev):
+		try:
+			self.logger.threaddebug ("Plugin device '{0}' deleted".format(dev.name))
+			
+			self._callBack (BEFORE, [dev])
 			
 			self._callBack (AFTER, [dev])
 		
@@ -511,6 +599,9 @@ class plug:
 			
 			self._callBack (BEFORE, [valuesDict, userCancelled, typeId, devId])	
 			
+			# Make sure we've flushed the cache for this device
+			self.factory.ui.flushCache (dev.id)
+			
 			self._callBack (AFTER, [valuesDict, userCancelled, typeId, devId])
 		
 		except Exception as e:
@@ -525,27 +616,67 @@ class plug:
 			self._callBack (BEFORE, [dev])	
 			
 			success = False
+			stateName = "onOffState"
+			stateVal = True
+			command = "on"
 			
 			if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
+				command = "on"
+				stateName = "onOffState"
+				
 				success = self._callBack (NOTHING, [dev], "onDeviceCommandTurnOn")
-				if success is None or success == False:
-					self.logger.error(u"send \"%s\" %s failed" % (dev.name, "on"))
-				else:
-					self.logger.info(u"sent \"%s\" %s" % (dev.name, "on"))
-				
+				if success:
+					stateVal = True
+									
 			elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
-				success = self._callBack (NOTHING, [dev], "onDeviceCommandTurnOff")
-				if success is None or success == False:
-					self.logger.error(u"send \"%s\" %s failed" % (dev.name, "off"))
-				else:
-					self.logger.info(u"sent \"%s\" %s" % (dev.name, "off"))
+				command = "off"
+				stateName = "onOffState"
 				
-			elif action.deviceAction == indigo.kDimmerRelayAction.toggle:
-				success = self._callBack (NOTHING, [dev], "onDeviceCommandToggle")
-				if success is None or success == False:
-					self.logger.error(u"send \"%s\" %s failed" % (dev.name, "toggle"))
+				success = self._callBack (NOTHING, [dev], "onDeviceCommandTurnOff")
+				if success:
+					stateVal = False
+									
+			elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
+				command = "toggle"
+				stateName = "onOffState"
+				stateVal = dev.states["onOffState"]
+								
+				#success = self._callBack (NOTHING, [dev], "onDeviceCommandToggle")
+				# Toggle is just a fancy name for on and off, so raise the on and off events
+				if stateVal:
+					success = self._callBack (NOTHING, [dev], "onDeviceCommandTurnOff")
 				else:
-					self.logger.info(u"sent \"%s\" %s" % (dev.name, "toggle"))
+					success = self._callBack (NOTHING, [dev], "onDeviceCommandTurnOn")
+				
+				if success:
+					# Reverse the state value so we can update our own state to be the opposite of what it was
+					if stateVal: 
+						stateVal = False
+					else:
+						stateVal = True
+						
+			elif action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
+				command = "set brightness"
+				stateName = "brightnessLevel"
+				
+				if ext.valueValid (dev.states, stateName):
+					success = self._callBack (NOTHING, [dev, action.actionValue], "onDeviceCommandSetBrightness")
+					stateVal = action.actionValue
+				else:
+					success = False
+				
+				if success:
+					stateVal = action.actionValue
+					
+			else:
+				self.logger.error ("Unknown device command: " + unicode(action))
+					
+					
+			if success:
+				dev.updateStateOnServer(stateName, stateVal)
+				self.logger.info(u"sent \"%s\" %s" % (dev.name, command))
+			else:
+				self.logger.error (u"send \"%s\" %s failed" % (dev.name, command))
 			
 			self._callBack (AFTER, [dev])
 		
@@ -727,8 +858,8 @@ class plug:
 			if "cache" in dir(self.factory):
 				ret = self.factory.cache.watchedItemChanges (origVar, newVar)
 				for change in ret:
-						self.logger.debug ("'{0}' {1} has changed".format(newVar.name, change.type))
-						self._callBack (NOTHING, [origVar, newVar, change], "onWatchedVariableChanged")
+					self.logger.debug ("'{0}' {1} has changed".format(newVar.name, change.type))
+					self._callBack (NOTHING, [origVar, newVar, change], "onWatchedVariableChanged")
 			
 			self._callBack (AFTER, [origVar, newVar])
 		
@@ -799,22 +930,68 @@ class plug:
 	# INDIGO ACTION EVENTS
 	################################################################################
 	
+	# Action group created (Indigo)
+	def actionGroupCreated(self, actionGroup): 
+		try:
+			self.logger.threaddebug ("Action group '{0}' created".format(actionGroup.name))
+			
+			self._callBack (BEFORE, [actionGroup])	
+			
+			self._callBack (AFTER, [actionGroup])
+		
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+	
+	# Action group updated (Indigo)
+	def actionGroupUpdated (self, origActionGroup, newActionGroup):
+		try:
+			self.logger.threaddebug ("Action group '{0}' updated".format(newActionGroup.name))
+			
+			self._callBack (BEFORE, [origActionGroup, newActionGroup])	
+			
+			if "cache" in dir(self.factory):
+				ret = self.factory.cache.watchedItemChanges (origActionGroup, newActionGroup)
+				for change in ret:
+					self.logger.debug ("'{0}' {1} has changed".format(newActionGroup.name, change.type))
+					self._callBack (NOTHING, [origActionGroup, newActionGroup, change], "onWatchedActionGroupChanged")
+			
+			self._callBack (AFTER, [origActionGroup, newActionGroup])
+		
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+			
+	# Action group deleted (Indigo)
+	def actionGroupDeleted(self, actionGroup): 
+		try:
+			self.logger.threaddebug ("Action group '{0}' deleted".format(actionGroup.name))
+			
+			self._callBack (BEFORE, [actionGroup])	
+			
+			self._callBack (AFTER, [actionGroup])
+		
+		except Exception as e:
+			self.logger.error (ext.getException(e))	
+	
 	# Validate the action configuration (Indigo)
-	def validateActionConfigUi(self, valuesDict, typeId, actionId):
+	def validateActionConfigUi(self, valuesDict, typeId, deviceId):
 		errorDict = indigo.Dict()
 		success = True
 		
 		try:
-			act = indigo.actions[actionId]
-			self.logger.threaddebug ("Validating configuration on '{0}'".format(act.name))
+			# We don't get the action information here, only the device ID if a device was selected
+			if deviceId != 0:
+				dev = indigo.devices[deviceId]
+				self.logger.threaddebug ("Validating configuration for an action group referencing '{0}'".format(dev.name))
+			else:
+				self.logger.threaddebug ("Validating configuration for an action group")
 			
-			retval = self._callBack (BEFORE, [valuesDict, typeId, actionId])
+			retval = self._callBack (BEFORE, [valuesDict, typeId, deviceId])
 			if retval is not None:
 				if "success" in retval: success = retval["success"]
 				if "valuesDict" in retval: valuesDict = retval["valuesDict"]
 				if "errorDict" in retval: errorDict = retval["errorDict"]
 			
-			retval = self._callBack (AFTER, [valuesDict, typeId, actionId])
+			retval = self._callBack (AFTER, [valuesDict, typeId, deviceId])
 			if retval is not None:
 				if "success" in retval: success = retval["success"]
 				if "valuesDict" in retval: valuesDict = retval["valuesDict"]
@@ -826,18 +1003,30 @@ class plug:
 		return (success, valuesDict, errorDict)
 	
 	# Action configuration closed (Indigo)
-	def closedActionConfigUi(self, valuesDict, userCancelled, typeId, actionId):
+	def closedActionConfigUi(self, valuesDict, userCancelled, typeId, deviceId):
 		try:
-			act = indigo.actions[actionId]
+			# We don't get the action information here, only the device ID if a device was selected
+			if deviceId != 0:
+				dev = indigo.devices[deviceId]
+				
+				if userCancelled:
+					self.logger.threaddebug ("Action group referencing '{0}' dialog cancelled".format(dev.name))
+				else:
+					self.logger.threaddebug ("Action group referencing '{0}' dialog closed".format(dev.name))
+				
+			else:			
+				if userCancelled:
+					self.logger.threaddebug ("Action group configuration dialog cancelled")
+				else:
+					self.logger.threaddebug ("Action group configuration dialog closed")
 			
-			if userCancelled:
-				self.logger.threaddebug ("Action '{0}' configuration dialog cancelled".format(act.name))
-			else:
-				self.logger.threaddebug ("Action '{0}' configuration dialog closed".format(act.name))
+			self._callBack (BEFORE, [valuesDict, userCancelled, typeId, deviceId])	
 			
-			self._callBack (BEFORE, [valuesDict, userCancelled, typeId, actionId])	
+			# Make sure we've flushed the cache for this device
+			self.factory.ui.flushCache (deviceId)
+			if ext.valueValid (valuesDict, "uniqueIdentifier", True): self.factory.ui.flushCache (int(valuesDict["uniqueIdentifier"]))
 			
-			self._callBack (AFTER, [valuesDict, userCancelled, typeId, actionId])
+			self._callBack (AFTER, [valuesDict, userCancelled, typeId, deviceId])
 		
 		except Exception as e:
 			self.logger.error (ext.getException(e))		
@@ -982,10 +1171,30 @@ class plug:
 			retval = self._callBack (BEFORE, [valuesDict, typeId, devId])
 			if retval is not None: valuesDict = retval
 			
+			# If we are using a "uniqueIdentifier" field then generate it if needed so we can reference it in
+			# other libs that might look for it
+			if ext.valueValid (valuesDict, "uniqueIdentifier"):
+				if valuesDict["uniqueIdentifier"] == "" or valuesDict["uniqueIdentifier"] == "0":
+					uId = int(random.random() * 100000000)
+					valuesDict["uniqueIdentifier"] = str(uId)
+					self.logger.threaddebug ("Assigned unique identifier of {0}".format(str(uId)))
+			
 			# See if we cached a list that we can use for default values
 			if devId > 0:
 				for field, value in valuesDict.iteritems():
-					valuesDict[field] = self.factory.ui.getDefaultListItem (devId, field, value)		
+					if type(valuesDict[field]) is indigo.List: 
+						# We cannot default lists because they are multiple choice, skip them
+						pass
+					else:
+						valuesDict[field] = self.factory.ui.getDefaultListItem (devId, field, value)
+					
+			else:
+				# See if we have a unique ID we can use instead
+				if ext.valueValid (valuesDict, "uniqueIdentifier"):
+					if valuesDict["uniqueIdentifier"] != "" or valuesDict["uniqueIdentifier"] != "0":	
+						targetId = int(valuesDict["uniqueIdentifier"])
+						for field, value in valuesDict.iteritems():
+							valuesDict[field] = self.factory.ui.getDefaultListItem (targetId, field, value)	
 					
 			
 			if "cond" in dir(self.factory): valuesDict = self.factory.cond.setUIDefaults (valuesDict)
@@ -1030,29 +1239,37 @@ class plug:
 	# EPS CONDITION HANDLERS
 	################################################################################
 	
-	# Check if conditions pass
+	# Check if conditions pass (the caller can either use the T/F returned here or ignore it and implement the raised events, either is fine
 	def checkConditions (self, propsDict, obj, supressLogging = False):
+		objName = "Non Indigo Device Object"
+		
 		try:
-			self.logger.debug ("Checking conditions on '{0}'".format(obj.name))
+			if obj is not None: objName = obj.name
+			
+			self.logger.debug ("Checking conditions on '{0}'".format(objName))
 			
 			if "cond" in dir(self.factory):
 				ret = self.factory.cond.conditionsPass (propsDict)
 					
 				if ret:
 					if supressLogging:
-						self.logger.debug ("Conditions passed on '{0}'".format(obj.name))
+						self.logger.debug ("Conditions passed on '{0}'".format(objName))
 					else:
-						self.logger.info ("Conditions passed on '{0}'".format(obj.name))
+						self.logger.info ("Conditions passed on '{0}'".format(objName))
 						
 					self._callBack (NOTHING, [obj], "onConditionsCheckPass")
 					
+					return True
+					
 				else:
 					if supressLogging:
-						self.logger.debug ("Conditions did not pass on '{0}'".format(obj.name))
+						self.logger.debug ("Conditions did not pass on '{0}'".format(objName))
 					else:
-						self.logger.info ("Conditions did not pass on '{0}'".format(obj.name))
+						self.logger.info ("Conditions did not pass on '{0}'".format(objName))
 						
 					self._callBack (NOTHING, [obj], "onConditionsCheckFail")
+					
+					return False
 				
 			else:
 				self.logger.warning ("Trying to check conditions but they are not enabled for this plugin")
