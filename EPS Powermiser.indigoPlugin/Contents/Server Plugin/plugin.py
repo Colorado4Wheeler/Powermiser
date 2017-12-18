@@ -115,6 +115,7 @@ class Plugin(indigo.PluginBase):
 			self.logger.error (ext.getException(e))	
 			
 	def onAfter_runConcurrentThread (self):
+		#return
 		try:
 			for dev in indigo.devices.iter(self.pluginId):
 				if ext.valueValid (dev.states, "autoOffTimes", True):

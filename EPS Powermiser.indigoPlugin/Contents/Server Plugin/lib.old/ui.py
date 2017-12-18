@@ -79,10 +79,6 @@ class ui:
 						index = valkey[1].strip()
 					if valkey[0].lower().strip() == "callback":
 						callback = valkey[1].strip()
-					if valkey[0].lower().strip() == "includetarget":
-						if valkey[1].lower() == "true":
-							del args[valkey[0].lower().strip()]
-							args["targetId"] = str(targetId)
 						
 
 			#indigo.server.log(unicode(index))
@@ -236,9 +232,7 @@ class ui:
 			self.listcache[targetId] = rec
 		
 		except Exception as e:
-			#self.logger.error ("index: {0}, targetId: {1}, args: {2}".format(unicode(index), unicode(targetId), unicode(args)))
 			self.logger.error (ext.getException(e))	
-			
 			
 	#
 	# See if a custom list call matches the cache and return the cache results if so
@@ -374,7 +368,7 @@ class ui:
 					isValid = False
 								
 					if ext.valueValid (dev.states, state):
-						isValide = True
+						isValid = True
 						
 				# Check for self filter
 				if excludeSelf and dev.pluginId == self.factory.plugin.pluginId: isValid = False
@@ -971,14 +965,14 @@ class ui:
 			allowUi = False
 			if ext.valueValid (args, "allowui", True): 
 				if args["allowui"].lower() == "true": allowUi = True
-				
+			
 			dev = indigo.devices[int(valuesDict[args["srcfield"]])]
 		
 			retList = []
 		
 			# If we have a plug cache then use that instead
 			if "plugcache" in dir(self.factory) and self.factory.plugcache is not None:
-				retList = self.factory.plugcache.getStateUIList (dev, allowUi)
+				retList = self.factory.plugcache.getStateUIList (dev)
 				return retList
 	
 			for stateName, stateValue in dev.states.iteritems():

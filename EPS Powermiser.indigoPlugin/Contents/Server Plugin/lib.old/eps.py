@@ -1,6 +1,6 @@
 # lib.eps - The factory that starts everything
 #
-# Copyright (c) 2017 ColoradoFourWheeler / EPS
+# Copyright (c) 2016 ColoradoFourWheeler / EPS
 #
 
 import indigo
@@ -13,9 +13,8 @@ from update import update
 from ui import ui
 from support import support
 
-
 class eps:
-	VERSION = "2.11"
+	VERSION = "2.6.0"
 	
 	#
 	# Initialize the  class
@@ -89,12 +88,7 @@ class eps:
 			if lib == "actions":
 				self.logger.threaddebug("Loading actions library")
 				from actions import actions
-				self.act = actions (self)
-				
-			if lib == "devices":
-				self.logger.threaddebug("Loading device extensions library")
-				from devices import devices
-				self.devices = devices (self)
+				self.act = actions(self)
 								
 			if lib == "conditions":
 				self.logger.threaddebug("Loading conditions library")
@@ -131,25 +125,9 @@ class eps:
 			del plugin.pluginPrefs["debugMode"]
 				
 		
-	#
-	# Call back a plugin method if it exists
-	#
-	def raiseEvent (self, method, args):
-		retval = None
-		
-		try:
-			if method in dir(self.plugin):
-				func = getattr(self.plugin, method)
 				
-				if len(args) > 0: 
-					retval = func(*args)
-				else:
-					retval = func()
-					
-		except Exception as e:
-			self.logger.error (ext.getException(e))			
-			
-		return retval
+				
+				
 				
 				
 				

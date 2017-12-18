@@ -95,7 +95,14 @@ class plug:
 				if caller != "runConcurrentThread":		
 					self.logger.threaddebug ("Raising {0} in plugin.py from call to {1}".format(funcname, caller))
 			
-				return self.factory.raiseEvent (funcname, args)
+				func = getattr(self.factory.plugin, funcname)
+				
+				if len(args) > 0: 
+					retval = func(*args)
+				else:
+					retval = func()
+				
+			return retval
 		
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
@@ -230,9 +237,6 @@ class plug:
 				
 				if "update" in dir(self.factory):
 					self.factory.update.check (False, False)
-					
-				if "devices" in dir(self.factory):
-					self.factory.devices.runConcurrentThread()
 				
 				self._callBack (AFTER, [])
 				
@@ -365,7 +369,7 @@ class plug:
 				pass
 			else:
 				return
-				
+			
 			if newDev.pluginId == self.factory.plugin.pluginId:
 				if len(origDev.pluginProps) > 0: 
 					self.pluginDeviceUpdated (origDev, newDev)
@@ -376,24 +380,20 @@ class plug:
 				elif len(origDev.pluginProps) == 0 and len(newDev.pluginProps) > 0:
 					self.pluginDeviceCreated (newDev)
 					
-			
-			# See if we are watching this
-			if "cache" in dir(self.factory):
-				ret = self.factory.cache.watchedItemChanges (origDev, newDev)
-				
-				for change in ret:
-					self.logger.debug ("'{0}' {1} '{2}' has changed, notifying '{3}'".format(newDev.name, change.type, change.name, indigo.devices[change.parentId].name))
-										
-					if change.itemType == "Device":
-						if change.type == "state": self._callBack (NOTHING, [origDev, newDev, change], "onWatchedStateChanged")
-						if change.type == "property": self._callBack (NOTHING, [origDev, newDev, change], "onWatchedPropertyChanged")
-						if change.type == "attribute": self._callBack (NOTHING, [origDev, newDev, change], "onWatchedAttributeChanged")
+			else:
+				# It's not a plugin device, see if it's a cache device
+				if "cache" in dir(self.factory):
+					ret = self.factory.cache.watchedItemChanges (origDev, newDev)
+					for change in ret:
+						self.logger.debug ("'{0}' {1} '{2}' has changed".format(newDev.name, change.type, change.name))
 						
-						if "devices" in dir(self.factory) and newDev.id in self.factory.devices.items:
-							self.factory.devices.deviceUpdated (origDev, newDev, change)
+						if change.itemType == "Device":
+							if change.type == "state": self._callBack (NOTHING, [origDev, newDev, change], "onWatchedStateChanged")
+							if change.type == "property": self._callBack (NOTHING, [origDev, newDev, change], "onWatchedPropertyChanged")
+							if change.type == "attribute": self._callBack (NOTHING, [origDev, newDev, change], "onWatchedAttributeChanged")
 		
 		except Exception as e:
-			self.logger.error (ext.getException(e))	
+			self.logger.error (ext.getException(e))				
 	
 	# New plugin device entering configuration
 	def pluginDeviceBegun (self, dev):
@@ -416,8 +416,6 @@ class plug:
 			
 			# Collapse conditions to return form to correct size if conditions are loaded
 			if "cond" in dir(self.factory):	self.factory.cond.collapseAllConditions (dev)
-			
-			self.addPluginDeviceToCache (dev)
 									
 			self._callBack (AFTER, [dev])
 		

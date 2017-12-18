@@ -6,30 +6,11 @@
 	<Action id="turnOn" deviceFilter="indigo.dimmer,indigo.relay">
 		<Name>Turn On</Name>
 		<CallbackMethod>Nil</CallbackMethod>
-		<ConfigUI>
-			<Field id="duration" type="textfield" defaultValue="0" valueType="delay">
-				<Label>Duration (HH:MM:SS)</Label>
-			</Field>
-			
-			<Field id="delay" type="textfield" defaultValue="0" valueType="delay">
-				<Label>Delay by (HH:MM:SS)</Label>
-			</Field>
-		</ConfigUI>
-		
 	</Action>
 	
 	<Action id="turnOff" deviceFilter="indigo.dimmer,indigo.relay">
 		<Name>Turn Off</Name>
 		<CallbackMethod>Nil</CallbackMethod>
-		<ConfigUI>
-			<Field id="duration" type="textfield" defaultValue="0" valueType="delay">
-				<Label>Duration (HH:MM:SS)</Label>
-			</Field>
-			
-			<Field id="delay" type="textfield" defaultValue="0" valueType="delay">
-				<Label>Delay by (HH:MM:SS)</Label>
-			</Field>
-		</ConfigUI>
 	</Action>
 	
 	<Action id="toggle" deviceFilter="indigo.dimmer,indigo.relay">

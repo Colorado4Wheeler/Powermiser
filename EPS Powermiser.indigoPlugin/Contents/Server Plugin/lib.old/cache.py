@@ -24,10 +24,7 @@ class cache:
 	def __init__(self, factory):
 		self.logger = logging.getLogger ("Plugin.cache")
 		self.factory = factory
-		self.items = cacheDict(factory)
-		self.pluginItems = indigo.Dict() # Plugin devices by type
-		self.pluginDevices = indigo.List() # All plugin devices
-		self.pluginLocalCache = indigo.List() # If the plugin needs to cache something special
+		self.items = cacheDict()
 		
 		self.logger.threaddebug ("Caching initialized")
 		
@@ -50,29 +47,9 @@ class cache:
 		
 			cDev = cacheDev(dev)
 			self.items.add(cDev)
+		
+			if cDev.pluginId == self.factory.plugin.pluginId: self._autoCacheFields (dev)
 			
-			if cDev.pluginId == self.factory.plugin.pluginId: 
-				self._autoCacheFields (dev)
-				
-				if cDev.id in self.pluginDevices:
-					pass
-				else:
-					self.pluginDevices.append(cDev.id) 
-				
-				pluginItem = indigo.Dict()
-				if cDev.deviceTypeId in self.pluginItems:
-					pluginItem = self.pluginItems[cDev.deviceTypeId]
-				
-				else:
-					pluginItem = indigo.List()
-
-				if cDev.id in pluginItem:
-					pass
-				else:
-					pluginItem.append(cDev.id)
-					
-				self.pluginItems[cDev.deviceTypeId] = pluginItem	
-				
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
 			
@@ -356,10 +333,9 @@ class cacheDict:
 	#
 	# Initialize the  class
 	#
-	def __init__(self, factory):
+	def __init__(self):
 		self.logger = logging.getLogger ("Plugin.cacheDict")
 		self.items = {}
-		self.factory = factory
 		
 	def __len__ (self):
 		try:
@@ -520,11 +496,6 @@ class cacheDict:
 			self.addWatchedItem (parent, child)
 			
 		parentWatch = self.items[parent.id]
-		
-		# It's possible the record is here but the watched/watching is empty, account for that here
-		if len(parentWatch.watching) == 0:
-			self.addWatchedItem (parent, child)
-			
 		for w in parentWatch.watching:
 			if w.id == child.id:
 				if state in w.states: 
@@ -640,16 +611,6 @@ class cacheDict:
 				
 			if isFound == False: self.items[parent.id].watchedBy.append(watchRec(child))
 			
-		if "devices" in dir(self.factory):
-			devEx = self.factory.devices.add (child)
-			
-			if devEx:
-				watchers = devEx.getWatchList()
-				for state in watchers["states"]:
-					self.addWatchedState (parent, child, state)
-					
-				for attrib in watchers["attribs"]:
-					self.addWatchedAttribute (parent, child, attrib)
 		
 #
 # Cache watch record
@@ -785,7 +746,7 @@ class cacheDev:
 						# Sprinkler active zone number displayed as zone name, check if activeZone changed
 						if state == "custom_activeZoneName": state = "activeZone"				
 				
-					#self.logger.threaddebug ("Checking for '{0}' state '{1}' changes".format(newDev.name, state))
+					self.logger.threaddebug ("Checking for '{0}' state '{1}' changes".format(newDev.name, state))
 					if state in origDev.states and state in newDev.states:
 						if origDev.states[state] != newDev.states[state]:
 							self.logger.threaddebug ("'{0}' state '{1}' has changed, adding change record for '{2}'".format(newDev.name, state, indigo.devices[watchinfo.id].name))
@@ -793,7 +754,7 @@ class cacheDev:
 													
 							
 				for attribute in watchinfo.attributes:
-					#self.logger.threaddebug ("Checking for '{0}' attribute '{1}' changes".format(newDev.name, attribute))
+					self.logger.threaddebug ("Checking for '{0}' attribute '{1}' changes".format(newDev.name, attribute))
 					origFunc = getattr (origDev, attribute)
 					newFunc = getattr (newDev, attribute)
 					
@@ -802,7 +763,7 @@ class cacheDev:
 						ret.append (cacheChange(self, "attribute", attribute, watchinfo.id, newDev.id, origFunc, newFunc))
 						
 				for property in watchinfo.properties:
-					#self.logger.threaddebug ("Checking for '{0}' property '{1}' changes".format(newDev.name, property))
+					self.logger.threaddebug ("Checking for '{0}' property '{1}' changes".format(newDev.name, property))
 					if property in origDev.ownerProps and property in newDev.ownerProps:
 						if origDev.ownerProps[property] != newDev.ownerProps[property]:
 							self.logger.threaddebug ("'{0}' property '{1}' has changed, adding change record for '{2}'".format(newDev.name, property, indigo.devices[watchinfo.id].name))
