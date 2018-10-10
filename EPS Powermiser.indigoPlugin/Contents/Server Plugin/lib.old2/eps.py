@@ -1,22 +1,21 @@
 # lib.eps - The factory that starts everything
 #
-# Copyright (c) 2018 ColoradoFourWheeler / EPS
+# Copyright (c) 2017 ColoradoFourWheeler / EPS
 #
 
 import indigo
 import logging
-import sys
 
 import ext
 
 from plug import plug
-#from update import update # Obsolete by Plugin Store November 2017
+from update import update
 from ui import ui
 from support import support
 
 
 class eps:
-	VERSION = "2.4.5"
+	VERSION = "2.11"
 	
 	#
 	# Initialize the  class
@@ -25,7 +24,6 @@ class eps:
 		if plugin is None: return # pre-loading before init
 		
 		try:
-			#self.memory_summary ()
 			self.plugin = plugin
 		
 			# Sets the log format in the plugin and across all modules that can reference the plugin
@@ -57,7 +55,7 @@ class eps:
 		try:
 			# Initialize the main plugin engine
 			self.plug = plug (self)
-			#self.update = update (self) # Obsolete by Plugin Store November 2017
+			self.update = update (self)
 			self.ui = ui (self)
 			self.support = support (self)
 		
@@ -92,11 +90,6 @@ class eps:
 				self.logger.threaddebug("Loading actions library")
 				from actions import actions
 				self.act = actions (self)
-				
-			if lib == "actionsv2":
-				self.logger.threaddebug("Loading actions v2 library")
-				from actions_v2 import actions
-				self.actv2 = actions (self)	
 				
 			if lib == "devices":
 				self.logger.threaddebug("Loading device extensions library")
@@ -136,19 +129,6 @@ class eps:
 		if ext.valueValid (plugin.pluginPrefs, "debugMode"): 
 			self.logger.info(u"Upgraded plugin preferences from pre-Indigo 7, depreciated preferences removed")
 			del plugin.pluginPrefs["debugMode"]
-			
-	#
-	# Only for use in dev environment with Pympler installed so we can track memory usage
-	def memory_summary(self):
-		# Only import Pympler when we need it. We don't want it to
-		# affect our process if we never call memory_summary.
-		
-		caller = sys._getframe(1).f_code.co_name # So we can reference the caller
-		
-		from pympler import summary, muppy
-		mem_summary = summary.summarize(muppy.get_objects())
-		rows = summary.format_(mem_summary)
-		indigo.server.log ('\n\nCALLED BY: ' + caller + '\n\n' + '\n'.join(rows)	)	
 				
 		
 	#

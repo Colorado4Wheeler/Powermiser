@@ -1,8 +1,3 @@
-# eps.conditions - Analyze and act upon conditional statements
-#
-# Copyright (c) 2018 ColoradoFourWheeler / EPS
-#
-
 import datetime
 import time
 import indigo

@@ -150,6 +150,18 @@ class Plugin(indigo.PluginBase):
 				for parentId in watchers:
 					parent = indigo.devices[int(parentId)]
 					
+					if not "autoOffTimes" in parent.states:
+						parent.updateStateOnServer("autoOffTimes", "{}")
+						
+					if not "statedisplay" in parent.states:
+						parent.updateStateOnServer("statedisplay", "off")	
+						
+					if parent.states["autoOffTimes"] == "":
+						parent.updateStateOnServer("autoOffTimes", "{}")
+						
+					if parent.states["statedisplay"] == "":
+						parent.updateStateOnServer("statedisplay", "off")		
+					
 					self.logger.debug ("\tProcessing auto off group '%s' managing this device" % parent.name)
 					autoOffTimes = ast.literal_eval (parent.states["autoOffTimes"])
 					

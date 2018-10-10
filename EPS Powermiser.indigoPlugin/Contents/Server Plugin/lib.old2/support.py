@@ -1,6 +1,6 @@
 # eps.support - Various support functions
 #
-# Copyright (c) 2018 ColoradoFourWheeler / EPS
+# Copyright (c) 2016 ColoradoFourWheeler / EPS
 #
 
 import indigo
@@ -42,7 +42,7 @@ class support:
 			ret += self.factory.ui.debugLine ("All support inquiries, questions or comments go to:")
 			ret += self.factory.ui.debugLine ("   http://forums.indigodomo.com/viewforum.php?f=192")
 			ret += self.factory.ui.debugLine (" ")
-			ret += self.factory.ui.debugLine ("Copyright (c) 2018 - Colorado4Wheeler & EPS")
+			ret += self.factory.ui.debugLine ("Copyright (c) 2017 - Colorado4Wheeler & EPS")
 			ret += self.factory.ui.debugLine (" ")
 			ret += self.factory.ui.debugHeaderEx ()
 			
@@ -58,9 +58,8 @@ class support:
 		try:
 			ret = self.pluginMenuSupportInfo (True)
 			
-			ret += self._getPluginPrefs()
-
-			ret += self._getCacheDump ()			
+			ret += self._getCacheDump ()
+			
 			
 			ret += self._getLocalDevices () # Always last so it shows at the bottom
 			
@@ -79,8 +78,6 @@ class support:
 		try:
 			ret = self.pluginMenuSupportInfo (True)
 			
-			ret += self._getPluginPrefs()
-			
 			ret += self._getLocalDevices ()
 			
 			ret += self.factory.ui.debugLine (" ")
@@ -90,24 +87,6 @@ class support:
 		
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
-
-
-	#
-	# Add plugin preferences to dump
-	#
-	def _getPluginPrefs (self):
-		try:
-			ret = self.factory.ui.debugHeaderEx ("=")
-			ret += self.factory.ui.debugLine ("PLUGIN PREFERENCES", "=")
-			ret += self.factory.ui.debugHeaderEx ("=")
-			
-			for prop, value in self.factory.plugin.pluginPrefs.iteritems():
-				ret += self.factory.ui.debugLine (prop + " = " + unicode(value), "=")
-		
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-		return ret
 
 
 	#

@@ -1,8 +1,6 @@
 # lib.plugcache - Reads plugin information into a re-usable cache
 #
-# Memory usage: ~10MB for full plugin data cache / ~35MB for everything as of 1/9/2017
-#
-# Copyright (c) 2018 ColoradoFourWheeler / ext
+# Copyright (c) 2017 ColoradoFourWheeler / ext
 #
 
 import indigo
@@ -29,6 +27,7 @@ fieldTypeTemplates = {
 	u"serialport": u"_configUiField_serialPort.xml"
 }
 
+
 class plugfilter:
 	#
 	# Init
@@ -45,7 +44,7 @@ class plugfilter:
 class plugcache:
 	
 	pluginCache = indigo.Dict()
-	
+
 	#
 	# Init
 	#
@@ -514,7 +513,7 @@ class plugcache:
 			#self.addIndigoActions ()
 			
 			self.logger.debug ("Refreshing plugin information")
-			
+		
 			base = indigo.server.getInstallFolderPath() + "/Plugins"
 			plugins = glob.glob(base + "/*.indigoPlugin")	
 			plugInfo = ''
@@ -525,10 +524,6 @@ class plugcache:
 					if plugin == base + "/Prowl.indigoPlugin":
 						self.logger.info ("Ingoring the {0} plugin because it generates errors when we access it".format("Prowl"))
 						continue
-						
-					if plugin == base + "/Network Devices.indigoPlugin":
-						self.logger.info ("Ingoring the {0} plugin because it generates errors when we access it".format("Network Devices"))
-						continue	
 				
 					plugInfo = self._parsePlist (plugin)
 					#if plugInfo["id"] != "com.eps.indigoplugin.dev-template": continue
@@ -557,17 +552,9 @@ class plugcache:
 					if os.path.isfile(plugin + "/Contents/Server Plugin/Actions.xml"):
 						pluginXML["actions"] = self._parseActionsXML(plugin + "/Contents/Server Plugin/Actions.xml")
 					
-					try:
-						plugInfo["xml"] = pluginXML # Represents about 10MB of plugin memory use
-						#indigo.server.log(unicode(plugInfo))
-						
-						self.pluginCache[plugInfo["id"]] = plugInfo
-						
-					except Exception as e:
-						self.logger.error ("Exception encountered with " + unicode(plugin) + " (this error is NOT critical and plugin caching will resume)")
-						#self.logger.debug ("Plugin Information: " + unicode(plugInfo))
-						self.logger.error (ext.getException(e))	
-						continue	
+					plugInfo["xml"] = pluginXML
+	
+					self.pluginCache[plugInfo["id"]] = plugInfo
 					
 				except Exception as e:
 					self.logger.error ("Exception encountered with " + unicode(plugin) + " (this error is NOT critical)")
@@ -578,9 +565,11 @@ class plugcache:
 			#self._parseDevicesXML(kDevicesFilename)
 			#self._parseEventsXML(kEventsFilename)
 			#self._parseActionsXML(kActionsFilename)
+		
+			X = 1
 			
-			#self.factory.memory_summary()
 			
+		
 		except Exception as e:
 			#raise
 			self.logger.error (ext.getException(e))	

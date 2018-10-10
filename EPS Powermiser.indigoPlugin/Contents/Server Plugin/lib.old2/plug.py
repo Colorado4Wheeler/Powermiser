@@ -1,8 +1,6 @@
-# coding: utf-8
-
 # eps.plug - Mirrors definitions from Indigo API and passes them to other routines if/when needed
 #
-# Copyright (c) 2018 ColoradoFourWheeler / EPS
+# Copyright (c) 2016 ColoradoFourWheeler / EPS
 #
 
 import indigo
@@ -118,7 +116,6 @@ class plug:
 				if diff > 3:
 					self.lastDeviceLoaded = False
 					self.logger.info (self.factory.plugin.pluginDisplayName + " is loaded and ready to use")
-					#self.factory.memory_summary()
 					return True
 				else:
 					return False
@@ -231,9 +228,8 @@ class plug:
 			while True:
 				self._callBack (BEFORE, [])
 				
-				# Removed any update checking as of 2.2.1 because the Indigo Plugin Store renders is obsolete
-				#if "update" in dir(self.factory):
-				#	self.factory.update.check (False, False)
+				if "update" in dir(self.factory):
+					self.factory.update.check (False, False)
 					
 				if "devices" in dir(self.factory):
 					self.factory.devices.runConcurrentThread()
@@ -380,18 +376,6 @@ class plug:
 				elif len(origDev.pluginProps) == 0 and len(newDev.pluginProps) > 0:
 					self.pluginDeviceCreated (newDev)
 					
-			else:
-				# In case our plugin wants to know about other devices that aren't our own for
-				# API calls or whatever
-				if len(origDev.ownerProps) > 0: 
-					self.nonpluginDeviceUpdated (origDev, newDev)
-					
-				elif len(origDev.ownerProps) == 0 and len(newDev.ownerProps) == 0 and newDev.deviceTypeId != "":
-					self.nonpluginDeviceBegun (newDev)
-					
-				elif len(origDev.ownerProps) == 0 and len(newDev.ownerProps) > 0:
-					self.nonpluginDeviceCreated (newDev)
-					
 			
 			# See if we are watching this
 			if "cache" in dir(self.factory):
@@ -407,45 +391,9 @@ class plug:
 						
 						if "devices" in dir(self.factory) and newDev.id in self.factory.devices.items:
 							self.factory.devices.deviceUpdated (origDev, newDev, change)
-			
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-	# New non plugin device entering configuration
-	def nonpluginDeviceBegun (self, dev):
-		try:
-			self.logger.threaddebug ("Non plugin device '{0}' being created and configured".format(dev.name.encode("utf-8")))
-			
-			self._callBack (BEFORE, [dev])	
-			
-			self._callBack (AFTER, [dev])
 		
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
-				
-	# Non plugin device created (Custom)
-	def nonpluginDeviceCreated (self, dev):
-		try:
-			self.logger.threaddebug ("Non plugin device '{0}' created".format(dev.name.encode("utf-8")))
-			
-			self._callBack (BEFORE, [dev])	
-			
-			self._callBack (AFTER, [dev])
-		
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-				
-	# Non plugin device updated (Custom)
-	def nonpluginDeviceUpdated (self, origDev, newDev):
-		try:
-			self.logger.threaddebug ("Non plugin device '{0}' has been updated".format(newDev.name.encode("utf-8")))
-			
-			self._callBack (BEFORE, [origDev, newDev])	
-			
-			self._callBack (AFTER, [origDev, newDev])
-				
-		except Exception as e:
-			self.logger.error (ext.getException(e))				
 	
 	# New plugin device entering configuration
 	def pluginDeviceBegun (self, dev):
@@ -581,25 +529,11 @@ class plug:
 				
 			if dev.pluginId == self.factory.plugin.pluginId:
 				self.pluginDeviceDeleted (dev)
-			else:
-				self.nonpluginDeviceDeleted (dev)
 			
 			self._callBack (AFTER, [dev])
 		
 		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-	# Non plugin device deleted (Custom)
-	def nonpluginDeviceDeleted (self, dev):
-		try:
-			self.logger.threaddebug ("Non plugin device '{0}' deleted".format(dev.name))
-			
-			self._callBack (BEFORE, [dev])
-			
-			self._callBack (AFTER, [dev])
-		
-		except Exception as e:
-			self.logger.error (ext.getException(e))					
+			self.logger.error (ext.getException(e))		
 			
 	# Plugin device deleted (Custom)
 	def pluginDeviceDeleted (self, dev):
@@ -736,27 +670,12 @@ class plug:
 				if success:
 					stateVal = action.actionValue
 					
-			elif action.deviceAction == indigo.kDimmerRelayAction.SetColorLevels:
-				command = "set color levels"
-				stateName = "brightnessLevel"
-				
-				if ext.valueValid (dev.states, stateName):
-					success = self._callBack (NOTHING, [dev, action.actionValue], "onDeviceCommandSetColor")
-					stateVal = action.actionValue
-					stateName = ""
-				else:
-					stateName = ""
-					success = False
-				
-				if success:
-					stateVal = action.actionValue
-					
 			else:
 				self.logger.error ("Unknown device command: " + unicode(action))
 					
 					
 			if success:
-				if stateName != "": dev.updateStateOnServer(stateName, stateVal)
+				dev.updateStateOnServer(stateName, stateVal)
 				self.logger.info(u"sent \"%s\" %s" % (dev.name, command))
 			else:
 				self.logger.error (u"send \"%s\" %s failed" % (dev.name, command))
@@ -774,8 +693,6 @@ class plug:
 	# Device protocol command received (Custom)
 	def protocolCommandReceivedFromCache (self, dev, cmd, type):
 		try:
-			self.logger.threaddebug ("Plugin detected protocol '{0}' action received from device node {1}".format(cmd[1], cmd[0]))
-			
 			self._callBack (BEFORE, [dev, cmd, type])	
 			
 			self._callBack (AFTER, [dev, cmd, type])
@@ -786,8 +703,6 @@ class plug:
 	# Device protocol command sent (Custom)
 	def protocolCommandSentFromCache (self, dev, cmd, type):
 		try:
-			self.logger.threaddebug ("Plugin detected protocol '{0}' action sent from device node {1}".format(cmd[1], cmd[0]))
-			
 			self._callBack (BEFORE, [dev, cmd, type])	
 			
 			self._callBack (AFTER, [dev, cmd, type])
@@ -1080,13 +995,9 @@ class plug:
 			
 			retval = self._callBack (AFTER, [valuesDict, typeId, deviceId])
 			if retval is not None:
-				success = retval[0]
-				valuesDict = retval[1]
-				errorDict = retval[2]
-				#if "success" in retval: success = retval["success"]
-				#if "valuesDict" in retval: valuesDict = retval["valuesDict"]
-				#if "errorDict" in retval: errorDict = retval["errorDict"]
-				
+				if "success" in retval: success = retval["success"]
+				if "valuesDict" in retval: valuesDict = retval["valuesDict"]
+				if "errorDict" in retval: errorDict = retval["errorDict"]
 		
 		except Exception as e:
 			self.logger.error (ext.getException(e))	
@@ -1246,9 +1157,6 @@ class plug:
 	# Check for updates
 	def pluginMenuCheckUpdates (self):
 		try:
-			# Rendered obsolete by the Indigo Plugin Store November 2017
-			return
-			
 			self.factory.update.check (True)			
 		
 		except Exception as e:
@@ -1293,7 +1201,6 @@ class plug:
 			
 			if "cond" in dir(self.factory): valuesDict = self.factory.cond.setUIDefaults (valuesDict)
 			if "act" in dir(self.factory): valuesDict = self.factory.act.setUIDefaults (valuesDict)
-			if "actv2" in dir(self.factory): valuesDict = self.factory.actv2.setUIDefaults (valuesDict)
 			
 			retval = self._callBack (AFTER, [valuesDict, typeId, devId])
 			if retval is not None: valuesDict = retval
@@ -1319,81 +1226,16 @@ class plug:
 			self.logger.error (ext.getException(e))		
 			
 	# An action that ran got an exception
-	def actionGotException (self, action, id, props, e, pluginDisplayName):
+	def actionGotException (self, action, id, props, e):
 		try:
 			self._callBack (BEFORE, [])	
 			
-			self.logger.error ("Running an action resulted in an exception.  While this may appear to come from {0} it is actually coming from the action belonging to the plugin '{1}' being called!".format(self.factory.plugin.pluginDisplayName, pluginDisplayName) )
-			#self.logger.error (unicode(action))	
-			#self.logger.error (unicode(props))
-			#self.logger.error (unicode(e))
+			self.logger.error ("Running an action resulted in an exception.  While this may appear to come from {0} it is actually coming from the action belonging to the plugin being called!".format(self.factory.plugin.pluginDisplayName) )
 			
 			self._callBack (AFTER, [])
 			
 		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-	# If adding standard action form data to a list in JSON format
-	def actionAddToListButton (self, valuesDict, typeId, devId):	
-		try:
-			errorsDict = indigo.Dict()
-			
-			ret = self._callBack (BEFORE, [valuesDict, typeId, devId])
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-				
-			ret = self.factory.actv2.actionAddToListButton (valuesDict, typeId, devId)
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-						
-			self._callBack (AFTER, [valuesDict, typeId, devId])
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-					
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-		return valuesDict, errorsDict
-
-	# If updating standard action form data to the JSON list
-	def actionUpdateListButton (self, valuesDict, typeId, devId):
-		try:
-			errorsDict = indigo.Dict()
-			
-			ret = self._callBack (BEFORE, [valuesDict, typeId, devId])
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-				
-			ret = self.factory.actv2.actionUpdateListButton (valuesDict, typeId, devId)
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-						
-			self._callBack (AFTER, [valuesDict, typeId, devId])
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-					
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-		return valuesDict, errorsDict
+			self.logger.error (ext.getException(e))		
 
 	################################################################################
 	# EPS CONDITION HANDLERS
@@ -1443,117 +1285,11 @@ class plug:
 	
 
 
-	################################################################################
-	# ADVANCED PLUGIN ACTIONS MENU (v3.3.0 plugin)
-	################################################################################
 
-	# Advanced Plugin Actions: Device Selected
-	def advHealthCheck (self, logOutput = "debug"):
-		try:
-			self.logger.threaddebug ("Advanced plugin menu performing health check on plugin and outputting to {0}".format(logOutput))
-			
-			self._callBack (BEFORE, [logOutput])
-			
-			self._callBack (AFTER, [logOutput])		
-		
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
 
-	# Advanced Plugin Actions: Device Selected
-	def advPluginDeviceSelected (self, valuesDict, typeId):
-		try:
-			self.logger.threaddebug ("Advanced plugin menu validating a device was selected")
-		
-			ret = self._callBack (BEFORE, [valuesDict, typeId])	
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-			
-			valuesDict["showDeviceActions"] = "true"
-			
-			ret = self._callBack (AFTER, [valuesDict, typeId])	
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-		
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-		return valuesDict	
 
-	# Advanced Device Actions
-	def btnAdvDeviceAction (self, valuesDict, typeId):		
-		try:
-			self.logger.threaddebug ("Advanced plugin menu performing '{0}' on device {1}".format(valuesDict["deviceActions"], valuesDict["device"]))
-		
-			ret = self._callBack (BEFORE, [valuesDict, typeId])	
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-					
-			if valuesDict["deviceActions"] == "states":
-				dev = indigo.devices[int(valuesDict["device"])]
-				self.logger.info (unicode(dev.states))
-				return valuesDict
-			elif valuesDict["deviceActions"] == "props":
-				dev = indigo.devices[int(valuesDict["device"])]
-				self.logger.info (unicode(dev.pluginProps))
-				return valuesDict
-			elif valuesDict["deviceActions"] == "data":
-				dev = indigo.devices[int(valuesDict["device"])]
-				self.logger.info (unicode(dev))
-				return valuesDict
-				
-			ret = self._callBack (AFTER, [valuesDict, typeId])	
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-			
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-		#return (success, valuesDict, errorsDict)	
-		return valuesDict	
-		
-	# Advanced Plugin Actions
-	def btnAdvPluginAction (self, valuesDict, typeId):		
-		try:
-			self.logger.threaddebug ("Advanced plugin menu performing '{0}' on plugin".format(valuesDict["pluginActions"]))
-		
-			ret = self._callBack (BEFORE, [valuesDict, typeId])	
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-					
-			if valuesDict["pluginActions"] == "data":
-				self.pluginMenuSupportData ()
-			elif valuesDict["pluginActions"] == "compdata":
-				self.pluginMenuSupportDataEx ()
-			elif valuesDict["pluginActions"] == "health":					
-				self.advHealthCheck("info")
-				
-			ret = self._callBack (AFTER, [valuesDict, typeId])	
-			if ret:
-				if len(ret) == 1:
-					valuesDict = ret
-				elif len(ret) == 2:
-					return ret[0], ret[1]
-				
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
-			
-		#return (success, valuesDict, errorsDict)	
-		return valuesDict	
+
+
 
 
 

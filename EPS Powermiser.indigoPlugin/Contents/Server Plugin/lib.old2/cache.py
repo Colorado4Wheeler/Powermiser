@@ -1,6 +1,6 @@
 # lib.cache - Caches devices and items from Indigo for lookup
 #
-# Copyright (c) 2018 ColoradoFourWheeler / EPS
+# Copyright (c) 2016 ColoradoFourWheeler / EPS
 #
 
 import indigo
@@ -152,10 +152,6 @@ class cache:
 			self.subscribeToChanges(parent)
 			
 			for devId, state in watchedItemsDict.iteritems():
-				if int(devId) not in indigo.devices:
-					self.logger.error ("Device '{0}' is referencing device ID {1} but that device is no longer an Indigo device.  Please change the device reference or remove '{0}' to prevent this error".format(parent.name, str(devId)))
-					continue
-						
 				states = []
 				
 				# They can pass a single state or a list of states, we'll convert if needed
@@ -306,16 +302,11 @@ class cache:
 	def watchedItemChanges (self, origObj, newObj):
 		ret = []
 		
-		#indigo.server.log(origObj.name)
-		#return ret
-		# This routine takes .2 to .4 extra CPU, without it it's 1.2 instead of 1.6 to 1.8
-		
 		try:
 			obj = self.items.isInCache (newObj.id)
 			
 			if obj:
 				self.logger.threaddebug("'{0}' is cached, checking for changes".format(newObj.name))
-				#self.watchedItemChanged_ShowAllChanges (origObj, newObj)
 				ret = obj.getWatchedByChanges (origObj, newObj)
 								
 			else:
@@ -325,24 +316,6 @@ class cache:
 			self.logger.error (ext.getException(e))	
 			
 		return ret
-		
-	#
-	# Compare two devices and log the changes between them
-	#
-	def watchedItemChanged_ShowAllChanges (self, origObj, newObj):
-		try:
-			for s in newObj.states:
-				if s in origObj.states:
-					if newObj.states[s] != origObj.states[s]:
-						self.logger.debug ("State {0} was {1} and is now {2}".format(s, unicode(origObj.states[s]), unicode(newObj.states[s])))
-						
-			for s in newObj.pluginProps:
-				if s in origObj.pluginProps:
-					if newObj.pluginProps[s] != origObj.pluginProps[s]:
-						self.logger.debug ("Property {0} was {1} and is now {2}".format(s, unicode(origObj.pluginProps[s]), unicode(newObj.pluginProps[s])))
-		
-		except Exception as e:
-			self.logger.error (ext.getException(e))	
 
 			
 	#
@@ -364,10 +337,6 @@ class cache:
 		try:
 			for fieldName, fieldValue in dev.pluginProps.iteritems():
 				if fieldName in DEV_FIELDS and fieldValue != "":
-					if int(fieldValue) not in indigo.devices:
-						self.logger.error ("Device '{0}' is referencing device ID {1} but that device is no longer an Indigo device.  Please change the device reference or remove '{0}' to prevent this error".format(dev.name, str(fieldValue)))
-						return False
-				
 					d = indigo.devices[int(fieldValue)]
 					self.logger.debug ("Found device reference field '{1}' in plugin device '{0}', auto-watching '{2}' for changes".format(dev.name, fieldName, d.name))
 					self._watchObject (dev, d)
